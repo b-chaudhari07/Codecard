@@ -48,7 +48,7 @@ export function RatingHistory({ profile }: RatingHistoryProps) {
       <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <div className="flex items-center gap-2.5">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.06] bg-white/[0.025] text-silver">
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-line bg-soft text-silver">
               <Activity size={15} strokeWidth={1.9} />
             </span>
             <h3 className="text-[15px] font-semibold tracking-[-0.01em] text-ink">
@@ -70,7 +70,7 @@ export function RatingHistory({ profile }: RatingHistoryProps) {
                 className={cn(
                   'rounded-full px-3 py-1.5 text-[11px] font-medium transition-colors duration-200',
                   range === option
-                    ? 'bg-surface text-ink shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]'
+                    ? 'bg-widget text-ink shadow-sm'
                     : 'text-muted hover:text-silver',
                 )}
                 aria-pressed={range === option}
@@ -107,8 +107,8 @@ export function RatingHistory({ profile }: RatingHistoryProps) {
                   className={cn(
                     'inline-flex items-center gap-1 rounded-full border px-2 py-1 text-[10px] font-medium tabular',
                     isPositive
-                      ? 'border-emerald-400/15 bg-emerald-400/[0.07] text-emerald-300/90'
-                      : 'border-rose-400/15 bg-rose-400/[0.07] text-rose-300/90',
+                      ? 'border-positive/20 bg-positive-soft text-positive'
+                      : 'border-negative/20 bg-negative-soft text-negative',
                   )}
                 >
                   {isPositive ? (
@@ -132,7 +132,7 @@ export function RatingHistory({ profile }: RatingHistoryProps) {
             <RatingLineChart data={filtered} accent={accent} />
           </div>
 
-          <div className="mt-1 flex flex-wrap items-center justify-between gap-3 border-t border-white/[0.05] pt-4 text-[11px] text-muted">
+          <div className="mt-1 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-4 text-[11px] text-muted">
             <div className="flex items-center gap-5">
               <span className="inline-flex items-center gap-2">
                 <span

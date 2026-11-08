@@ -46,47 +46,48 @@ export const CARD_THEMES: Record<CardThemeId, CardTheme> = {
     id: 'obsidian',
     name: 'Obsidian',
     mode: 'dark',
-    description: 'Dark glassmorphism · silver & muted gold',
-    background: '#090A0C',
-    surface: '#151619',
-    elevated: '#1B1D22',
-    text: '#F5F5F5',
-    muted: '#92949A',
-    border: '#292B30',
-    borderStrong: '#35383F',
-    chartGrid: 'rgba(255, 255, 255, 0.06)',
-    chartLabel: 'rgba(245, 245, 245, 0.36)',
-    chartDot: '#090A0C',
-    heatmapEmpty: 'rgba(255, 255, 255, 0.055)',
-    glowPrimary: 'rgba(200, 208, 220, 0.16)',
-    glowSecondary: 'rgba(215, 180, 94, 0.1)',
+    description: 'Cinematic glass · emerald light',
+    background: '#07080C',
+    surface: 'rgba(18, 21, 28, 0.66)',
+    elevated: 'rgba(26, 30, 39, 0.78)',
+    text: '#F7F8FB',
+    muted: '#9BA2B2',
+    border: 'rgba(255, 255, 255, 0.10)',
+    borderStrong: 'rgba(255, 255, 255, 0.20)',
+    chartGrid: 'rgba(255, 255, 255, 0.07)',
+    chartLabel: 'rgba(247, 248, 251, 0.38)',
+    chartDot: '#07080C',
+    heatmapEmpty: '#122019',
+    glowPrimary: 'rgba(95, 208, 160, 0.18)',
+    glowSecondary: 'rgba(106, 168, 255, 0.12)',
     surfaceGradient:
-      'linear-gradient(180deg, rgba(255,255,255,0.035), rgba(255,255,255,0.012))',
-    surfaceShadow: 'none',
-    insetHighlight: 'inset 0 1px 0 rgba(255,255,255,0.045)',
-    signatureAccent: 'gold',
+      'linear-gradient(135deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.025) 38%, rgba(255,255,255,0.055) 100%)',
+    surfaceShadow: '0 24px 60px rgba(0, 0, 0, 0.42)',
+    insetHighlight: 'inset 0 1px 0 rgba(255,255,255,0.14)',
+    signatureAccent: 'emerald',
   },
   minimal: {
     id: 'minimal',
     name: 'Minimal',
     mode: 'light',
-    description: 'Apple-inspired · lavender & soft shadows',
-    background: '#F5F5F7',
-    surface: '#FFFFFF',
-    elevated: '#FAFAFC',
+    description: 'Apple-inspired · frosted daylight',
+    background: '#F2F4F7',
+    surface: 'rgba(255, 255, 255, 0.78)',
+    elevated: 'rgba(255, 255, 255, 0.92)',
     text: '#17171D',
-    muted: '#777782',
-    border: '#E8E8ED',
-    borderStrong: '#D9D9E3',
-    chartGrid: '#EFEFF4',
-    chartLabel: '#A0A0AB',
+    muted: '#6F7480',
+    border: 'rgba(23, 23, 29, 0.08)',
+    borderStrong: 'rgba(23, 23, 29, 0.16)',
+    chartGrid: 'rgba(23, 23, 29, 0.07)',
+    chartLabel: 'rgba(23, 23, 29, 0.42)',
     chartDot: '#FFFFFF',
-    heatmapEmpty: '#EFEFF4',
-    glowPrimary: 'rgba(167, 139, 250, 0.14)',
-    glowSecondary: 'rgba(255, 255, 255, 0.9)',
-    surfaceGradient: null,
-    surfaceShadow: '0 18px 40px rgba(23, 23, 29, 0.06)',
-    insetHighlight: 'none',
+    heatmapEmpty: '#122019',
+    glowPrimary: 'rgba(95, 208, 160, 0.14)',
+    glowSecondary: 'rgba(185, 167, 255, 0.14)',
+    surfaceGradient:
+      'linear-gradient(135deg, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0.55) 55%, rgba(255,255,255,0.82) 100%)',
+    surfaceShadow: '0 20px 50px rgba(23, 23, 29, 0.10)',
+    insetHighlight: 'inset 0 1px 0 rgba(255,255,255,0.9)',
     signatureAccent: 'lavender',
   },
 }
@@ -117,6 +118,21 @@ export const ACCENTS: Record<AccentId, Accent> = {
     value: '#F08A9B',
     onLight: '#C2455C',
   },
+  violet: {
+    name: 'Violet',
+    value: '#A78BFA',
+    onLight: '#7C3AED',
+  },
+  amber: {
+    name: 'Amber',
+    value: '#F5B94A',
+    onLight: '#B7791F',
+  },
+  cyan: {
+    name: 'Cyan',
+    value: '#5FE0E8',
+    onLight: '#0E8C96',
+  },
 }
 
 /**
@@ -141,11 +157,14 @@ export const RANK_ACCENTS: Record<
 
 export const THEME_IDS: CardThemeId[] = ['obsidian', 'minimal']
 export const ACCENT_IDS: AccentId[] = [
-  'lavender',
-  'sapphire',
-  'gold',
   'emerald',
+  'sapphire',
+  'violet',
   'rose',
+  'amber',
+  'cyan',
+  'lavender',
+  'gold',
 ]
 
 export function resolveRankAccent(
@@ -180,26 +199,82 @@ export function resolveAccent(
   accentId: AccentId,
   autoRankColor: boolean,
   rank: CodeforcesRank | null,
+  customAccent: string | null = null,
 ): string {
-  return resolveAccentForMode(theme.mode, accentId, autoRankColor, rank)
+  if (autoRankColor) {
+    const rankAccent = resolveRankAccent(rank, theme.mode)
+    if (rankAccent) return rankAccent
+  }
+
+  const custom = normalizeHex(customAccent)
+  if (custom) {
+    return theme.mode === 'light' ? mixHex(custom, '#000000', 0.16) : custom
+  }
+
+  return resolveAccentForMode(theme.mode, accentId, false, rank)
 }
 
-/** Adds an alpha channel to a six-digit hex colour. */
-export function withAlpha(hex: string, alpha: number): string {
-  const value = hex.replace('#', '')
-  if (value.length !== 6) return hex
+function parseHex(hex: string): [number, number, number] | null {
+  const value = hex.trim().replace('#', '')
+  if (value.length === 3) {
+    const [r, g, b] = value.split('')
+    return [
+      Number.parseInt(`${r}${r}`, 16),
+      Number.parseInt(`${g}${g}`, 16),
+      Number.parseInt(`${b}${b}`, 16),
+    ]
+  }
+  if (value.length !== 6) return null
   const r = Number.parseInt(value.slice(0, 2), 16)
   const g = Number.parseInt(value.slice(2, 4), 16)
   const b = Number.parseInt(value.slice(4, 6), 16)
+  if ([r, g, b].some((channel) => Number.isNaN(channel))) return null
+  return [r, g, b]
+}
+
+export function normalizeHex(hex: string | null | undefined): string | null {
+  if (!hex) return null
+  const parsed = parseHex(hex)
+  if (!parsed) return null
+  return `#${parsed
+    .map((channel) => channel.toString(16).padStart(2, '0'))
+    .join('')}`
+}
+
+/** Adds an alpha channel to a hex colour. */
+export function withAlpha(hex: string, alpha: number): string {
+  const parsed = parseHex(hex)
+  if (!parsed) return hex
+  const [r, g, b] = parsed
   return `rgba(${r}, ${g}, ${b}, ${alpha})`
+}
+
+/** Blends `hex` toward `target` by `amount` (0–1). */
+export function mixHex(hex: string, target: string, amount: number): string {
+  const from = parseHex(hex)
+  const to = parseHex(target)
+  if (!from || !to) return hex
+  const ratio = Math.min(1, Math.max(0, amount))
+  const channels = from.map((channel, index) =>
+    Math.round(channel + (to[index] - channel) * ratio),
+  )
+  return `#${channels
+    .map((channel) => channel.toString(16).padStart(2, '0'))
+    .join('')}`
 }
 
 export const DEFAULT_CARD_OPTIONS: CardOptions = {
   theme: 'obsidian',
-  accent: 'gold',
-  autoRankColor: true,
+  accent: 'emerald',
+  autoRankColor: false,
+  customAccent: null,
   designationMode: 'auto',
   customDesignation: '',
+  customQuote: '',
+  showQuote: true,
+  showBanner: true,
+  customBanner: null,
+  bannerPosition: 'center',
   showRatingChart: true,
   showHeatmap: true,
   showHardestProblem: true,

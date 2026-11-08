@@ -68,15 +68,15 @@ export function ProfileLoadingState({
                 className={cn(
                   'flex items-center gap-3 rounded-xl border px-4 py-3 transition-colors',
                   active
-                    ? 'border-silver/20 bg-white/[0.035]'
-                    : 'border-white/[0.045] bg-white/[0.012]',
+                    ? 'border-silver/40 bg-soft-2'
+                    : 'border-line bg-soft',
                 )}
               >
                 <span
                   className={cn(
                     'flex h-6 w-6 shrink-0 items-center justify-center rounded-full border',
                     done
-                      ? 'border-emerald-400/25 bg-emerald-400/10 text-emerald-300'
+                      ? 'border-positive/25 bg-positive-soft text-positive'
                       : active
                         ? 'border-silver/25 bg-silver/10 text-silver'
                         : 'border-line bg-surface text-muted/50',
@@ -178,11 +178,11 @@ export function ProfileErrorState({
     <section className="section-shell py-16 sm:py-20">
       <div className="widget mx-auto max-w-3xl p-7 sm:p-10">
         <div className="flex flex-col gap-6 sm:flex-row sm:items-start">
-          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-rose-400/20 bg-rose-400/[0.06] text-rose-300">
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-negative/20 bg-negative-soft text-negative">
             <Icon size={19} />
           </span>
           <div className="min-w-0">
-            <p className="eyebrow text-rose-300/70">Unable to load profile</p>
+            <p className="eyebrow text-negative/80">Unable to load profile</p>
             <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-ink">
               {copy.title}
             </h2>
@@ -199,7 +199,7 @@ export function ProfileErrorState({
           <button
             type="button"
             onClick={onRetry}
-            className="inline-flex items-center justify-center gap-2 rounded-xl bg-ink px-4 py-2.5 text-[13px] font-semibold text-[#090A0C] transition-colors hover:bg-white"
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-ink px-4 py-2.5 text-[13px] font-semibold text-canvas transition-all hover:opacity-90"
           >
             <RefreshCw size={14} />
             Try again
@@ -214,7 +214,7 @@ export function ProfileErrorState({
           </button>
         </div>
 
-        <p className="mt-6 border-t border-white/[0.05] pt-4 text-[11px] text-muted/60">
+        <p className="mt-6 border-t border-line pt-4 text-[11px] text-muted/60">
           Live data is never replaced with sample statistics when a request
           fails.
         </p>
@@ -236,15 +236,15 @@ export function ProfileWarnings({
 
   return (
     <section className="section-shell pt-12">
-      <div className="rounded-2xl border border-amber-400/15 bg-amber-400/[0.045] px-5 py-4">
+      <div className="rounded-2xl border border-warning/20 bg-warning-soft px-5 py-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex items-start gap-3">
             <AlertTriangle
               size={15}
-              className="mt-0.5 shrink-0 text-amber-300/80"
+              className="mt-0.5 shrink-0 text-warning"
             />
             <div className="space-y-1">
-              <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-amber-200/70">
+              <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-warning/80">
                 Partial data
               </p>
               {warnings.map((warning) => (
@@ -285,7 +285,7 @@ export function WidgetState({
   description,
 }: WidgetStateProps) {
   return (
-    <div className="mt-7 flex min-h-[220px] flex-col items-center justify-center rounded-2xl border border-dashed border-line bg-white/[0.012] px-6 py-10 text-center">
+    <div className="mt-7 flex min-h-[220px] flex-col items-center justify-center rounded-2xl border border-dashed border-line bg-soft px-6 py-10 text-center">
       <span className="flex h-10 w-10 items-center justify-center rounded-xl border border-line bg-surface text-muted">
         <Icon size={17} strokeWidth={1.8} />
       </span>

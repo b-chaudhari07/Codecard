@@ -21,7 +21,7 @@ export function MetricCard({
 }: MetricCardProps) {
   return (
     <article
-      className="widget group animate-fade-up p-6 transition-all duration-300 hover:-translate-y-0.5 hover:border-white/[0.1]"
+      className="widget group animate-fade-up p-6 transition-all duration-300 hover:-translate-y-0.5 hover:border-silver/30"
       style={{ animationDelay: `${index * 70}ms` }}
     >
       <div
@@ -33,7 +33,7 @@ export function MetricCard({
       <div className="relative flex items-start justify-between gap-4">
         <p className="text-[13px] font-medium text-muted">{label}</p>
         <span
-          className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/[0.06] bg-white/[0.025]"
+          className="flex h-9 w-9 items-center justify-center rounded-xl border border-line bg-soft"
           style={{ color: accent }}
         >
           <Icon size={16} strokeWidth={1.9} />

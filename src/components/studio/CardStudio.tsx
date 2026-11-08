@@ -2,40 +2,72 @@ import { useLayoutEffect, useRef, useState } from 'react'
 import { toPng } from 'html-to-image'
 
 import { CardCustomizer } from './CardCustomizer'
-import { ProfileCard } from './ProfileCard'
+import { CARD_HEIGHT, CARD_WIDTH, ProfileCard } from './ProfileCard'
 import { SectionHeading } from '../ui/SectionHeading'
 import { CARD_THEMES, DEFAULT_CARD_OPTIONS } from '../../lib/cardThemes'
 import type { CardOptions, Profile } from '../../types/profile'
 
 interface CardStudioProps {
   profile: Profile
+  options?: CardOptions
+  onOptionsChange?: (options: CardOptions) => void
 }
 
-const CARD_WIDTH = 1080
-const CARD_HEIGHT = 1350
+export function CardStudio({
+  profile,
+  options: externalOptions,
+  onOptionsChange: externalOnChange,
+}: CardStudioProps) {
+  const [internalOptions, setInternalOptions] =
+    useState<CardOptions>(DEFAULT_CARD_OPTIONS)
 
-export function CardStudio({ profile }: CardStudioProps) {
-  const [options, setOptions] = useState<CardOptions>(DEFAULT_CARD_OPTIONS)
+  const options = externalOptions ?? internalOptions
+  const setOptions = externalOnChange ?? setInternalOptions
+
   const [isExporting, setIsExporting] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [scale, setScale] = useState(0.5)
+  const [scale, setScale] = useState(0.45)
 
-  const previewRef = useRef<HTMLDivElement>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
   const cardRef = useRef<HTMLDivElement>(null)
 
   useLayoutEffect(() => {
-    const element = previewRef.current
+    const element = containerRef.current
     if (!element) return
 
     const updateScale = () => {
-      const width = element.getBoundingClientRect().width
-      if (width > 0) setScale(width / CARD_WIDTH)
+      const rect = element.getBoundingClientRect()
+      if (rect.width <= 0 || rect.height <= 0) return
+
+      const style = window.getComputedStyle(element)
+      const padX =
+        Number.parseFloat(style.paddingLeft || '0') +
+        Number.parseFloat(style.paddingRight || '0')
+      const padY =
+        Number.parseFloat(style.paddingTop || '0') +
+        Number.parseFloat(style.paddingBottom || '0')
+
+      const availableWidth = Math.max(80, rect.width - padX)
+      const availableHeight = Math.max(80, rect.height - padY)
+
+      const scaleByWidth = availableWidth / CARD_WIDTH
+      const scaleByHeight = availableHeight / CARD_HEIGHT
+      const newScale = Math.min(scaleByWidth, scaleByHeight)
+
+      if (newScale > 0 && Number.isFinite(newScale)) {
+        setScale(newScale)
+      }
     }
 
     updateScale()
     const observer = new ResizeObserver(updateScale)
     observer.observe(element)
-    return () => observer.disconnect()
+    window.addEventListener('resize', updateScale)
+
+    return () => {
+      observer.disconnect()
+      window.removeEventListener('resize', updateScale)
+    }
   }, [])
 
   const handleDownload = async () => {
@@ -69,10 +101,13 @@ export function CardStudio({ profile }: CardStudioProps) {
     }
   }
 
+  const displayWidth = Math.round(CARD_WIDTH * scale)
+  const displayHeight = Math.round(CARD_HEIGHT * scale)
+
   return (
     <section
       id="studio"
-      className="section-shell scroll-mt-24 py-20 sm:py-24"
+      className="section-shell scroll-mt-24 py-16 sm:py-20"
     >
       <SectionHeading
         eyebrow="Card Studio"
@@ -89,7 +124,7 @@ export function CardStudio({ profile }: CardStudioProps) {
               className={
                 profile.isSample
                   ? 'h-1.5 w-1.5 animate-pulse-soft rounded-full bg-gold'
-                  : 'h-1.5 w-1.5 rounded-full bg-emerald-400'
+                  : 'h-1.5 w-1.5 rounded-full bg-positive'
               }
             />
             {profile.isSample ? 'Sample profile' : 'Live profile'}
@@ -99,48 +134,66 @@ export function CardStudio({ profile }: CardStudioProps) {
         }
       />
 
-      <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_400px]">
+      <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_380px]">
         <div className="widget animate-fade-up p-3 sm:p-5">
           <div className="flex items-center justify-between gap-3 px-2 pb-3">
             <div className="flex items-center gap-2 text-[11px] text-muted">
-              <span className="h-1.5 w-1.5 animate-pulse-soft rounded-full bg-emerald-400" />
+              <span className="h-1.5 w-1.5 animate-pulse-soft rounded-full bg-positive" />
               Live preview
             </div>
             <div className="flex items-center gap-1.5 text-[10px] text-muted/70">
-              <span className="rounded-full border border-line bg-canvas/40 px-2 py-1">
-                4:5
+              <span className="rounded-full border border-line bg-surface px-2 py-1">
+                7:5
               </span>
-              <span className="rounded-full border border-line bg-canvas/40 px-2 py-1 tabular">
-                1080 × 1350
+              <span className="rounded-full border border-line bg-surface px-2 py-1 tabular">
+                1400 × 1000
               </span>
             </div>
           </div>
 
+          {/* Sizing & centering container */}
           <div
-            ref={previewRef}
-            className="relative w-full overflow-hidden rounded-[20px] border border-line bg-black/40"
-            style={{ aspectRatio: '4 / 5' }}
+            ref={containerRef}
+            className="relative mx-auto flex w-full items-center justify-center overflow-hidden rounded-[20px] border border-line bg-soft p-3 sm:p-5"
+            style={{
+              aspectRatio: '7 / 5',
+              maxHeight: 'min(72vh, 620px)',
+            }}
           >
+            {/* Exactly sized scaled bounding box */}
             <div
-              className="absolute left-0 top-0 origin-top-left"
               style={{
-                width: CARD_WIDTH,
-                height: CARD_HEIGHT,
-                transform: `scale(${scale})`,
+                width: displayWidth,
+                height: displayHeight,
+                position: 'relative',
+                flexShrink: 0,
               }}
             >
-              <ProfileCard
-                ref={cardRef}
-                profile={profile}
-                options={options}
-              />
+              {/* Unscaled 1400x1000 node transformed from top-left */}
+              <div
+                style={{
+                  width: CARD_WIDTH,
+                  height: CARD_HEIGHT,
+                  transform: `scale(${scale})`,
+                  transformOrigin: 'top left',
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                }}
+              >
+                <ProfileCard
+                  ref={cardRef}
+                  profile={profile}
+                  options={options}
+                />
+              </div>
             </div>
           </div>
 
-          <div className="flex items-center justify-between gap-3 px-2 pt-4 text-[10px] text-muted/60">
+          <div className="flex items-center justify-between gap-3 px-2 pt-3 text-[10px] text-muted/60">
             <span className="inline-flex items-center gap-1.5">
               <span className="h-1 w-1 rounded-full bg-silver/50" />
-              Export target is isolated from the dashboard
+              Export target: 2800 × 2000 (2×)
             </span>
             <span className="tabular">{Math.round(scale * 100)}% preview</span>
           </div>

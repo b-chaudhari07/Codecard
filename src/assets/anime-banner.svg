@@ -1,0 +1,163 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 700" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Moonlit anime mountain landscape">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#04060F" />
+      <stop offset="34%" stop-color="#081426" />
+      <stop offset="62%" stop-color="#102A3E" />
+      <stop offset="82%" stop-color="#1B4350" />
+      <stop offset="100%" stop-color="#08131B" />
+    </linearGradient>
+    <radialGradient id="moonGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#FFF8E6" stop-opacity="0.95" />
+      <stop offset="22%" stop-color="#F8E7BE" stop-opacity="0.42" />
+      <stop offset="58%" stop-color="#E7D8A8" stop-opacity="0.12" />
+      <stop offset="100%" stop-color="#E7D8A8" stop-opacity="0" />
+    </radialGradient>
+    <radialGradient id="moonDisc" cx="38%" cy="34%" r="70%">
+      <stop offset="0%" stop-color="#FFFDF4" />
+      <stop offset="62%" stop-color="#F6E8C4" />
+      <stop offset="100%" stop-color="#DCC997" />
+    </radialGradient>
+    <linearGradient id="farRidge" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#315568" stop-opacity="0.72" />
+      <stop offset="100%" stop-color="#142A38" stop-opacity="0.2" />
+    </linearGradient>
+    <linearGradient id="midRidge" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#183747" />
+      <stop offset="100%" stop-color="#0A1722" />
+    </linearGradient>
+    <linearGradient id="nearRidge" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0B1C27" />
+      <stop offset="100%" stop-color="#04080E" />
+    </linearGradient>
+    <linearGradient id="water" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0B202A" />
+      <stop offset="50%" stop-color="#07151D" />
+      <stop offset="100%" stop-color="#04090E" />
+    </linearGradient>
+    <linearGradient id="mist" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#8FC4D4" stop-opacity="0" />
+      <stop offset="42%" stop-color="#9AD2DF" stop-opacity="0.24" />
+      <stop offset="68%" stop-color="#B7E0E8" stop-opacity="0.14" />
+      <stop offset="100%" stop-color="#8FC4D4" stop-opacity="0" />
+    </linearGradient>
+    <linearGradient id="cloud" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#5C8FA5" stop-opacity="0" />
+      <stop offset="35%" stop-color="#77AEC0" stop-opacity="0.24" />
+      <stop offset="70%" stop-color="#B6DCE4" stop-opacity="0.15" />
+      <stop offset="100%" stop-color="#5C8FA5" stop-opacity="0" />
+    </linearGradient>
+    <linearGradient id="moonPath" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#F9EBC6" stop-opacity="0.34" />
+      <stop offset="45%" stop-color="#E7D6A4" stop-opacity="0.1" />
+      <stop offset="100%" stop-color="#E7D6A4" stop-opacity="0" />
+    </linearGradient>
+    <filter id="softBlur" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="18" />
+    </filter>
+    <filter id="wideBlur" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="42" />
+    </filter>
+    <filter id="glow" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="8" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+  </defs>
+
+  <rect width="1400" height="700" fill="url(#sky)" />
+
+  <!-- Stars -->
+  <g fill="#F8F3E2">
+    <circle cx="120" cy="92" r="1.6" opacity="0.55" />
+    <circle cx="214" cy="148" r="1.1" opacity="0.42" />
+    <circle cx="305" cy="66" r="1.4" opacity="0.5" />
+    <circle cx="392" cy="122" r="1" opacity="0.38" />
+    <circle cx="474" cy="54" r="1.8" opacity="0.62" />
+    <circle cx="568" cy="102" r="1.2" opacity="0.44" />
+    <circle cx="648" cy="42" r="1.3" opacity="0.5" />
+    <circle cx="742" cy="86" r="1" opacity="0.36" />
+    <circle cx="812" cy="138" r="1.5" opacity="0.46" />
+    <circle cx="905" cy="58" r="1.2" opacity="0.4" />
+    <circle cx="1192" cy="72" r="1.4" opacity="0.5" />
+    <circle cx="1274" cy="136" r="1" opacity="0.34" />
+    <circle cx="1340" cy="86" r="1.6" opacity="0.46" />
+    <circle cx="258" cy="210" r="1" opacity="0.3" />
+    <circle cx="702" cy="176" r="1.1" opacity="0.32" />
+    <circle cx="1122" cy="218" r="1.2" opacity="0.34" />
+    <circle cx="88" cy="242" r="1" opacity="0.28" />
+    <circle cx="990" cy="104" r="1" opacity="0.34" />
+  </g>
+
+  <!-- Moon glow and disc -->
+  <circle cx="1048" cy="174" r="210" fill="url(#moonGlow)" filter="url(#wideBlur)" opacity="0.9" />
+  <circle cx="1048" cy="174" r="118" fill="url(#moonGlow)" opacity="0.9" />
+  <circle cx="1048" cy="174" r="66" fill="url(#moonDisc)" filter="url(#glow)" />
+  <circle cx="1028" cy="154" r="7" fill="#E8D8AE" opacity="0.32" />
+  <circle cx="1070" cy="194" r="4.5" fill="#E8D8AE" opacity="0.26" />
+  <circle cx="1064" cy="146" r="3.2" fill="#E8D8AE" opacity="0.22" />
+
+  <!-- Light rays -->
+  <g opacity="0.16" fill="#F8EBC8">
+    <path d="M1048 174 L690 0 L770 0 Z" />
+    <path d="M1048 174 L1220 0 L1292 0 Z" />
+    <path d="M1048 174 L1400 196 L1400 262 Z" />
+  </g>
+
+  <!-- Atmospheric clouds -->
+  <g filter="url(#softBlur)">
+    <path d="M-40 300 C120 262 240 288 380 272 C540 252 650 292 800 278 C960 264 1080 292 1440 258 L1440 330 L-40 350 Z" fill="url(#cloud)" opacity="0.62" />
+    <path d="M-60 370 C140 330 300 360 470 342 C650 322 780 360 950 344 C1110 330 1250 356 1460 330 L1460 402 L-60 420 Z" fill="url(#cloud)" opacity="0.5" />
+  </g>
+
+  <!-- Far mountain range -->
+  <path d="M-20 452 L74 402 L132 424 L214 352 L292 410 L372 338 L458 412 L548 356 L626 418 L716 330 L812 414 L902 364 L992 426 L1082 354 L1176 420 L1268 372 L1360 430 L1420 398 L1420 520 L-20 520 Z" fill="url(#farRidge)" />
+  <path d="M214 352 L246 382 L214 396 L182 380 Z" fill="#7FA8B8" opacity="0.26" />
+  <path d="M716 330 L754 368 L716 386 L676 366 Z" fill="#7FA8B8" opacity="0.3" />
+  <path d="M1082 354 L1114 386 L1082 402 L1048 384 Z" fill="#7FA8B8" opacity="0.24" />
+
+  <!-- Mid mountain range -->
+  <path d="M-20 526 L92 470 L168 500 L262 424 L350 492 L438 444 L520 512 L610 462 L702 522 L798 452 L890 514 L982 466 L1074 528 L1168 472 L1260 530 L1350 486 L1420 522 L1420 602 L-20 602 Z" fill="url(#midRidge)" />
+  <path d="M262 424 L300 468 L262 486 L224 466 Z" fill="#A8CDD6" opacity="0.18" />
+  <path d="M798 452 L836 492 L798 510 L760 490 Z" fill="#A8CDD6" opacity="0.2" />
+  <path d="M1168 472 L1204 508 L1168 524 L1132 506 Z" fill="#A8CDD6" opacity="0.16" />
+
+  <!-- Mist bands -->
+  <g filter="url(#softBlur)">
+    <rect x="-60" y="470" width="1520" height="46" fill="url(#mist)" opacity="0.75" />
+    <rect x="-80" y="548" width="1560" height="38" fill="url(#mist)" opacity="0.55" />
+  </g>
+
+  <!-- Water -->
+  <rect x="0" y="570" width="1400" height="130" fill="url(#water)" />
+  <path d="M1048 570 L1090 700 L1006 700 Z" fill="url(#moonPath)" opacity="0.55" filter="url(#softBlur)" />
+  <g stroke="#B9D9DF" stroke-linecap="round" opacity="0.18">
+    <line x1="860" y1="598" x2="1030" y2="598" stroke-width="1.2" />
+    <line x1="1080" y1="622" x2="1260" y2="622" stroke-width="1.1" />
+    <line x1="900" y1="646" x2="1010" y2="646" stroke-width="1" />
+    <line x1="1120" y1="668" x2="1240" y2="668" stroke-width="0.9" />
+  </g>
+
+  <!-- Near ridge / foreground -->
+  <path d="M-20 640 L70 596 L148 626 L244 570 L332 628 L430 588 L528 650 L632 602 L736 656 L842 610 L948 660 L1054 616 L1160 662 L1264 622 L1360 664 L1420 636 L1420 700 L-20 700 Z" fill="url(#nearRidge)" />
+  <g fill="#02060A" opacity="0.85">
+    <path d="M0 700 L0 646 L44 620 L74 640 L108 618 L140 646 L174 632 L214 662 L250 640 L292 668 L330 650 L372 676 L414 654 L462 684 L510 662 L560 690 L610 672 L664 700 Z" />
+    <path d="M1400 700 L1400 650 L1360 628 L1328 648 L1294 626 L1258 654 L1224 638 L1184 668 L1148 646 L1106 674 L1064 652 L1018 682 L970 660 L920 688 L870 670 L816 700 Z" />
+  </g>
+
+  <!-- Floating light particles -->
+  <g fill="#EAF7F4" filter="url(#glow)">
+    <circle cx="190" cy="344" r="2" opacity="0.36" />
+    <circle cx="340" cy="300" r="1.5" opacity="0.28" />
+    <circle cx="540" cy="388" r="1.8" opacity="0.3" />
+    <circle cx="760" cy="332" r="2.2" opacity="0.34" />
+    <circle cx="920" cy="286" r="1.4" opacity="0.26" />
+    <circle cx="1210" cy="332" r="1.8" opacity="0.3" />
+    <circle cx="1320" cy="272" r="1.4" opacity="0.24" />
+  </g>
+
+  <!-- Bottom vignette -->
+  <rect x="0" y="540" width="1400" height="160" fill="url(#sky)" opacity="0.18" />
+</svg>

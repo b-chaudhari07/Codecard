@@ -14,7 +14,7 @@ export function TopicAnalysis({ profile }: TopicAnalysisProps) {
       <div className="flex items-start justify-between gap-4">
         <div>
           <div className="flex items-center gap-2.5">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.06] bg-white/[0.025] text-silver">
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-line bg-soft text-silver">
               <Tags size={15} strokeWidth={1.9} />
             </span>
             <h3 className="text-[15px] font-semibold tracking-[-0.01em] text-ink">
@@ -52,7 +52,7 @@ export function TopicAnalysis({ profile }: TopicAnalysisProps) {
                 <span className="w-[118px] shrink-0 truncate rounded-full border border-line bg-surface/50 px-2.5 py-1 text-[11px] text-silver/90">
                   {topic.tag}
                 </span>
-                <div className="relative h-1 flex-1 overflow-hidden rounded-full bg-white/[0.04]">
+                <div className="relative h-1 flex-1 overflow-hidden rounded-full bg-soft-2">
                   <div
                     className="h-full rounded-full bg-gradient-to-r from-silver/35 to-silver/80"
                     style={{
@@ -68,7 +68,7 @@ export function TopicAnalysis({ profile }: TopicAnalysisProps) {
             ))}
           </div>
 
-          <div className="mt-7 flex items-center justify-between border-t border-white/[0.05] pt-4 text-[11px] text-muted">
+          <div className="mt-7 flex items-center justify-between border-t border-line pt-4 text-[11px] text-muted">
             <span>Strength is relative to your most solved tag.</span>
             <span className="text-silver/80">top 10</span>
           </div>

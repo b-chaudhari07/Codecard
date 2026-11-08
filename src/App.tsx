@@ -94,9 +94,14 @@ function App() {
 
       <Header
         theme={theme}
-        onToggleTheme={() =>
-          setTheme((current) => (current === 'dark' ? 'light' : 'dark'))
-        }
+        onToggleTheme={() => {
+          setTheme((current) => {
+            const next = current === 'dark' ? 'light' : 'dark'
+            applyTheme(next)
+            persistTheme(next)
+            return next
+          })
+        }}
       />
 
       <main>

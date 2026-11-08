@@ -1,64 +1,310 @@
 import { forwardRef } from 'react'
-import type { CSSProperties } from 'react'
+import type { CSSProperties, ReactNode } from 'react'
+import {
+  CalendarDays,
+  Crown,
+  Flame,
+  Shield,
+  Sparkles,
+  Trophy,
+} from 'lucide-react'
 
+import bannerUrl from '../../assets/anime-banner.svg'
 import { RatingLineChart } from '../charts/RatingLineChart'
 import { CodeforcesMark } from '../ui/CodeforcesMark'
 import { ProfileAvatar } from '../ui/ProfileAvatar'
 import {
   CARD_THEMES,
+  mixHex,
   resolveAccent,
+  resolveRankAccent,
   withAlpha,
 } from '../../lib/cardThemes'
 import type { CardTheme } from '../../lib/cardThemes'
-import { formatNumber, formatShortDate } from '../../lib/utils'
-import type { CardOptions, Profile } from '../../types/profile'
+import { resolveDesignation } from '../../lib/designation'
+import { formatNumber } from '../../lib/utils'
+import type {
+  CardOptions,
+  CodeforcesRank,
+  HeatmapDay,
+  Profile,
+} from '../../types/profile'
 
 interface ProfileCardProps {
   profile: Profile
   options: CardOptions
 }
 
-const CARD_WIDTH = 1080
-const CARD_HEIGHT = 1350
+export const CARD_WIDTH = 1400
+export const CARD_HEIGHT = 1000
 
 function handleFontSize(handle: string): number {
   if (handle.length > 20) return 42
-  if (handle.length > 16) return 50
-  if (handle.length > 13) return 56
-  return 64
+  if (handle.length > 16) return 48
+  if (handle.length > 13) return 55
+  return 62
 }
 
-function surfaceStyle(theme: CardTheme, radius: number): CSSProperties {
+function glassSurface(
+  theme: CardTheme,
+  radius: number,
+  elevated = false,
+): CSSProperties {
   const shadows = [
     theme.insetHighlight !== 'none' ? theme.insetHighlight : null,
     theme.surfaceShadow !== 'none' ? theme.surfaceShadow : null,
   ].filter((shadow): shadow is string => Boolean(shadow))
 
   return {
-    backgroundColor: theme.surface,
+    position: 'relative',
+    backgroundColor: elevated ? theme.elevated : theme.surface,
     backgroundImage: theme.surfaceGradient ?? undefined,
     border: `1px solid ${theme.border}`,
     borderRadius: radius,
     boxShadow: shadows.length > 0 ? shadows.join(', ') : 'none',
+    overflow: 'hidden',
   }
+}
+
+function GlassSheen({
+  accent,
+  radius,
+  isDark,
+}: {
+  accent: string
+  radius: number
+  isDark: boolean
+}) {
+  return (
+    <span
+      aria-hidden="true"
+      style={{
+        position: 'absolute',
+        inset: 0,
+        borderRadius: radius,
+        pointerEvents: 'none',
+        background: isDark
+          ? `radial-gradient(ellipse at 14% 0%, ${withAlpha(accent, 0.16)}, transparent 46%), linear-gradient(135deg, rgba(255,255,255,0.09), transparent 42%)`
+          : 'linear-gradient(135deg, rgba(255,255,255,0.95), rgba(255,255,255,0.22) 45%, rgba(255,255,255,0.62))',
+      }}
+    />
+  )
+}
+
+function GlassPanel({
+  theme,
+  accent,
+  radius,
+  style,
+  children,
+}: {
+  theme: CardTheme
+  accent: string
+  radius: number
+  style?: CSSProperties
+  children: ReactNode
+}) {
+  return (
+    <section style={{ ...glassSurface(theme, radius), ...style }}>
+      <GlassSheen accent={accent} radius={radius} isDark={theme.mode === 'dark'} />
+      <div
+        style={{
+          position: 'relative',
+          zIndex: 1,
+          display: 'flex',
+          height: '100%',
+          minHeight: 0,
+          flexDirection: 'column',
+        }}
+      >
+        {children}
+      </div>
+    </section>
+  )
+}
+
+function RankBadge({
+  rank,
+  rankColor,
+  accent,
+  compact = false,
+}: {
+  rank: CodeforcesRank | null
+  rankColor: string
+  accent: string
+  compact?: boolean
+}) {
+  return (
+    <span
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: compact ? 5 : 7,
+        padding: compact ? '4px 10px' : '6px 13px',
+        borderRadius: 9999,
+        border: `1px solid ${withAlpha(rankColor, 0.55)}`,
+        background: `linear-gradient(135deg, ${withAlpha(rankColor, 0.24)}, ${withAlpha(accent, 0.1)})`,
+        boxShadow: `0 0 18px ${withAlpha(rankColor, 0.18)}, inset 0 1px 0 rgba(255,255,255,0.18)`,
+        color: rankColor,
+        fontSize: compact ? 9.5 : 11,
+        fontWeight: 700,
+        letterSpacing: '0.16em',
+        textTransform: 'uppercase',
+        whiteSpace: 'nowrap',
+      }}
+    >
+      <Shield size={compact ? 10 : 12} strokeWidth={2.2} />
+      {rank ?? 'Unrated'}
+    </span>
+  )
+}
+
+function AchievementTile({
+  theme,
+  accent,
+  label,
+  icon,
+  children,
+  style,
+  iconSize = 28,
+  iconProminent = false,
+}: {
+  theme: CardTheme
+  accent: string
+  label: string
+  icon: ReactNode
+  children: ReactNode
+  style?: CSSProperties
+  iconSize?: number
+  iconProminent?: boolean
+}) {
+  const isDark = theme.mode === 'dark'
+  const radius = 18
+
+  return (
+    <div
+      style={{
+        ...glassSurface(theme, radius),
+        display: 'flex',
+        minHeight: 0,
+        flexDirection: 'column',
+        gap: 8,
+        padding: '13px 16px',
+        ...style,
+      }}
+    >
+      <GlassSheen accent={accent} radius={radius} isDark={isDark} />
+      <span
+        aria-hidden="true"
+        style={{
+          position: 'absolute',
+          right: 8,
+          bottom: 4,
+          color: accent,
+          opacity: isDark ? 0.1 : 0.075,
+          transform: 'scale(4.8)',
+          transformOrigin: 'bottom right',
+          pointerEvents: 'none',
+        }}
+      >
+        {icon}
+      </span>
+      <div
+        style={{
+          position: 'relative',
+          zIndex: 1,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 10,
+          flexShrink: 0,
+        }}
+      >
+        <p
+          style={{
+            fontSize: 10.5,
+            fontWeight: 600,
+            letterSpacing: '0.18em',
+            textTransform: 'uppercase',
+            color: theme.muted,
+          }}
+        >
+          {label}
+        </p>
+        <span
+          style={{
+            display: 'flex',
+            width: iconSize,
+            height: iconSize,
+            alignItems: 'center',
+            justifyContent: 'center',
+            borderRadius: Math.round(iconSize * 0.34),
+            border: `1px solid ${withAlpha(accent, iconProminent ? 0.42 : 0.24)}`,
+            backgroundColor: withAlpha(accent, iconProminent ? 0.18 : 0.1),
+            boxShadow: iconProminent
+              ? `0 0 20px ${withAlpha(accent, 0.26)}, inset 0 1px 0 rgba(255,255,255,0.14)`
+              : 'none',
+            color: accent,
+            flexShrink: 0,
+          }}
+        >
+          {icon}
+        </span>
+      </div>
+      <div
+        style={{
+          position: 'relative',
+          zIndex: 1,
+          display: 'flex',
+          flex: 1,
+          minHeight: 0,
+          flexDirection: 'column',
+          justifyContent: 'center',
+        }}
+      >
+        {children}
+      </div>
+    </div>
+  )
+}
+
+function getHeatmapLevel(count: number): 0 | 1 | 2 | 3 {
+  if (count <= 0) return 0
+  if (count <= 3) return 1
+  if (count <= 9) return 2
+  return 3
 }
 
 /**
  * The exported artefact. Everything inside this component uses explicit,
  * self-contained styling so the PNG never inherits dashboard chrome.
+ *
+ * The composition is a 7:5 collectible: a cinematic banner behind a glass
+ * identity band, an oversized rating, a tall progress chart, four distinct
+ * achievement tiles, a reversed emerald activity calendar, an optional motto,
+ * and a quiet footer.
  */
 export const ProfileCard = forwardRef<HTMLDivElement, ProfileCardProps>(
   function ProfileCard({ profile, options }, ref) {
     const theme = CARD_THEMES[options.theme]
+    const isDark = theme.mode === 'dark'
     const accent = resolveAccent(
       theme,
       options.accent,
       options.autoRankColor,
       profile.rank,
+      options.customAccent,
     )
-    const isDark = theme.mode === 'dark'
+    const rankColor =
+      resolveRankAccent(profile.rank, theme.mode) ?? accent
     const accentSoft = withAlpha(accent, isDark ? 0.15 : 0.11)
     const accentBorder = withAlpha(accent, isDark ? 0.32 : 0.24)
+    const heroShadow = isDark
+      ? '0 2px 18px rgba(0,0,0,0.58)'
+      : '0 1px 0 rgba(255,255,255,0.72)'
+
+    const designation = resolveDesignation(profile, options)
+    const quote = options.customQuote.trim()
 
     const peakRating =
       profile.maxRating ??
@@ -66,66 +312,69 @@ export const ProfileCard = forwardRef<HTMLDivElement, ProfileCardProps>(
         ? Math.max(...profile.ratingHistory.map((point) => point.rating))
         : null)
 
-    const showMemberSince = options.showMemberSince
-    const memberSinceLabel = profile.registrationDate
-      ? formatShortDate(profile.registrationDate)
-      : (profile.joinedYear?.toString() ?? '—')
-
     const identityLine = [
       profile.country,
-      showMemberSince && profile.joinedYear
-        ? `Member since ${profile.joinedYear}`
-        : null,
+      profile.joinedYear ? `Member since ${profile.joinedYear}` : null,
     ]
       .filter(Boolean)
       .join(' · ')
 
-    const stats: Array<{
-      label: string
-      value: string
-      highlight?: boolean
-    }> = []
+    const activity = profile.submissionActivity
+    const hardest = profile.hardestProblem
 
-    if (options.showProblemStats) {
-      stats.push({
-        label: 'Problems solved',
-        value: formatNumber(profile.problemsSolved),
+    // Chunk the last 52 * 7 = 364 days into week columns. The header summary
+    // is derived from the exact weeks that are rendered so it always matches
+    // the visible grid.
+    const heatmapDays = activity ? activity.days.slice(-364) : []
+    const heatmapWeeks: HeatmapDay[][] = []
+    if (heatmapDays.length > 0) {
+      let currentWeek: HeatmapDay[] = []
+      heatmapDays.forEach((day, index) => {
+        currentWeek.push(day)
+        if (currentWeek.length === 7 || index === heatmapDays.length - 1) {
+          heatmapWeeks.push(currentWeek)
+          currentWeek = []
+        }
       })
     }
+    const displayedWeeks = heatmapWeeks.slice(-52)
+    const displayedDays = displayedWeeks.flat()
+    const heatmapSubmissions = displayedDays.reduce(
+      (sum, day) => sum + day.submissions,
+      0,
+    )
+    const heatmapActiveDays = displayedDays.filter(
+      (day) => day.submissions > 0,
+    ).length
 
-    if (options.showContestStats) {
-      stats.push({
-        label: 'Rated contests',
-        value: formatNumber(profile.ratedContests),
-      })
-      stats.push({
-        label: 'Best rank',
-        value: profile.contestStats
-          ? `#${formatNumber(profile.contestStats.bestRank)}`
-          : '—',
-        highlight: true,
-      })
+    const heatmapPalette = {
+      zero: theme.heatmapEmpty,
+      bright: mixHex(accent, '#FFFFFF', 0.46),
+      medium: accent,
+      rich: mixHex(accent, '#000000', 0.5),
     }
 
     const hasRatingChart =
       options.showRatingChart && profile.ratingHistory.length > 0
-    const hasTopics = options.showTopics && profile.topics.length > 0
-    const hasStats = stats.length > 0
-
-    const difficultyTotal = profile.difficulty.reduce(
-      (sum, bucket) => sum + bucket.solved,
-      0,
-    )
-    const peakBucket = profile.difficulty.reduce(
-      (best, bucket) => (bucket.solved > best.solved ? bucket : best),
-      profile.difficulty[0],
-    )
-    const hasDifficulty =
-      options.showProblemStats &&
-      difficultyTotal > 0 &&
-      peakBucket !== undefined
-
+    const hasHeatmap = options.showHeatmap && Boolean(activity)
+    const hasLeftColumn = hasRatingChart || hasHeatmap
+    const showSolved = options.showStats
+    const showActiveDays = options.showStats
+    const showStreak = options.showStats
+    const showHardest = options.showHardestProblem
+    const hasAchievements =
+      showSolved || showActiveDays || showStreak || showHardest
+    const showQuote = options.showQuote && quote.length > 0
+    const hasRightColumn = hasAchievements || showQuote
     const hasWatermark = options.showWatermark
+
+    const bannerPosition =
+      options.bannerPosition === 'top'
+        ? 'center top'
+        : options.bannerPosition === 'bottom'
+          ? 'center bottom'
+          : 'center center'
+    const bannerSource = options.customBanner ?? bannerUrl
 
     return (
       <div
@@ -143,33 +392,61 @@ export const ProfileCard = forwardRef<HTMLDivElement, ProfileCardProps>(
           overflow: 'hidden',
         }}
       >
-        {/* Ambient light — stronger and cooler on Obsidian, soft lavender on Minimal. */}
+        {options.showBanner ? (
+          <div aria-hidden="true" style={{ position: 'absolute', inset: 0 }}>
+            <div
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                height: 640,
+                backgroundImage: `url("${bannerSource}")`,
+                backgroundSize: 'cover',
+                backgroundPosition: bannerPosition,
+                backgroundRepeat: 'no-repeat',
+                opacity: isDark ? 1 : 0.92,
+              }}
+            />
+            <div
+              style={{
+                position: 'absolute',
+                inset: 0,
+                background: isDark
+                  ? `linear-gradient(90deg, rgba(7,8,12,0.72) 0%, rgba(7,8,12,0.36) 40%, rgba(7,8,12,0.1) 68%, rgba(7,8,12,0.34) 100%), linear-gradient(180deg, rgba(7,8,12,0.04) 0%, rgba(7,8,12,0.16) 28%, rgba(7,8,12,0.6) 60%, ${theme.background} 90%)`
+                  : `linear-gradient(90deg, rgba(242,244,247,0.86) 0%, rgba(242,244,247,0.55) 38%, rgba(242,244,247,0.16) 66%, rgba(242,244,247,0.55) 100%), linear-gradient(180deg, rgba(242,244,247,0.42) 0%, rgba(242,244,247,0.46) 30%, rgba(242,244,247,0.86) 64%, ${theme.background} 92%)`,
+              }}
+            />
+          </div>
+        ) : null}
+
+        {/* Controlled ambient lighting */}
         <div
           aria-hidden="true"
           style={{
             position: 'absolute',
-            top: -190,
-            right: -160,
-            width: 660,
-            height: 660,
+            top: -210,
+            left: -160,
+            width: 720,
+            height: 720,
             borderRadius: '50%',
-            background: `radial-gradient(circle, ${theme.glowPrimary}, transparent 68%)`,
-            filter: 'blur(58px)',
-            opacity: isDark ? 1 : 0.9,
+            background: `radial-gradient(circle, ${withAlpha(accent, isDark ? 0.2 : 0.13)}, transparent 66%)`,
+            filter: 'blur(64px)',
+            opacity: isDark ? 0.95 : 0.85,
           }}
         />
         <div
           aria-hidden="true"
           style={{
             position: 'absolute',
-            top: '36%',
-            left: -220,
-            width: 580,
-            height: 580,
+            bottom: -260,
+            right: -160,
+            width: 760,
+            height: 760,
             borderRadius: '50%',
-            background: `radial-gradient(circle, ${theme.glowSecondary}, transparent 68%)`,
-            filter: 'blur(68px)',
-            opacity: isDark ? 0.95 : 1,
+            background: `radial-gradient(circle, ${withAlpha(rankColor, isDark ? 0.14 : 0.08)}, transparent 68%)`,
+            filter: 'blur(76px)',
+            opacity: 0.9,
           }}
         />
         <div
@@ -178,8 +455,8 @@ export const ProfileCard = forwardRef<HTMLDivElement, ProfileCardProps>(
             position: 'absolute',
             inset: 0,
             background: isDark
-              ? 'linear-gradient(180deg, rgba(255,255,255,0.018), transparent 34%)'
-              : 'linear-gradient(180deg, rgba(255,255,255,0.65), transparent 42%)',
+              ? 'linear-gradient(180deg, rgba(255,255,255,0.025), transparent 30%, rgba(0,0,0,0.18))'
+              : 'linear-gradient(180deg, rgba(255,255,255,0.55), transparent 38%)',
             pointerEvents: 'none',
           }}
         />
@@ -190,10 +467,10 @@ export const ProfileCard = forwardRef<HTMLDivElement, ProfileCardProps>(
             display: 'flex',
             height: '100%',
             flexDirection: 'column',
-            padding: isDark ? '56px 76px' : '56px 80px',
+            padding: '36px 48px 30px',
+            boxSizing: 'border-box',
           }}
         >
-          {/* Top accent rule */}
           <div
             aria-hidden="true"
             style={{
@@ -201,9 +478,9 @@ export const ProfileCard = forwardRef<HTMLDivElement, ProfileCardProps>(
               top: 0,
               left: 0,
               right: 0,
-              height: 4,
-              background: `linear-gradient(90deg, transparent 6%, ${accent} 50%, transparent 94%)`,
-              opacity: isDark ? 0.75 : 0.5,
+              height: 2,
+              background: `linear-gradient(90deg, transparent 4%, ${withAlpha(accent, 0.85)} 42%, ${withAlpha(rankColor, 0.8)} 58%, transparent 96%)`,
+              opacity: isDark ? 0.9 : 0.55,
             }}
           />
 
@@ -211,36 +488,41 @@ export const ProfileCard = forwardRef<HTMLDivElement, ProfileCardProps>(
             style={{
               display: 'flex',
               flexShrink: 0,
-              alignItems: 'flex-start',
+              alignItems: 'center',
               justifyContent: 'space-between',
+              gap: 24,
+              textShadow: heroShadow,
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
               <span
                 style={{
                   display: 'flex',
-                  width: 54,
-                  height: 54,
+                  width: 44,
+                  height: 44,
                   alignItems: 'center',
                   justifyContent: 'center',
-                  borderRadius: 17,
-                  border: `1px solid ${theme.border}`,
-                  backgroundColor: theme.surface,
+                  borderRadius: 14,
+                  border: `1px solid ${withAlpha(accent, isDark ? 0.28 : 0.22)}`,
+                  backgroundColor: isDark
+                    ? 'rgba(10, 13, 18, 0.42)'
+                    : 'rgba(255,255,255,0.62)',
                   backgroundImage: theme.surfaceGradient ?? undefined,
                   boxShadow: isDark
-                    ? theme.insetHighlight
-                    : '0 8px 20px rgba(23,23,29,0.06)',
+                    ? `inset 0 1px 0 rgba(255,255,255,0.16), 0 0 24px ${withAlpha(accent, 0.16)}`
+                    : '0 8px 20px rgba(23,23,29,0.08)',
                   color: accent,
+                  flexShrink: 0,
                 }}
               >
-                <CodeforcesMark size={25} />
+                <CodeforcesMark size={21} />
               </span>
               <div>
                 <p
                   style={{
-                    fontSize: 19,
-                    fontWeight: 600,
-                    letterSpacing: '0.2em',
+                    fontSize: 14,
+                    fontWeight: 700,
+                    letterSpacing: '0.22em',
                     textTransform: 'uppercase',
                     color: theme.text,
                   }}
@@ -249,9 +531,9 @@ export const ProfileCard = forwardRef<HTMLDivElement, ProfileCardProps>(
                 </p>
                 <p
                   style={{
-                    marginTop: 4,
-                    fontSize: 11,
-                    letterSpacing: '0.28em',
+                    marginTop: 3,
+                    fontSize: 9,
+                    letterSpacing: '0.3em',
                     textTransform: 'uppercase',
                     color: theme.muted,
                   }}
@@ -261,24 +543,42 @@ export const ProfileCard = forwardRef<HTMLDivElement, ProfileCardProps>(
               </div>
             </div>
 
-            <div style={{ textAlign: 'right' }}>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+                textAlign: 'right',
+              }}
+            >
               {hasWatermark ? (
-                <p
+                <span
                   style={{
-                    fontSize: 11,
-                    letterSpacing: '0.28em',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    padding: '5px 10px',
+                    borderRadius: 9999,
+                    border: `1px solid ${withAlpha(accent, isDark ? 0.24 : 0.18)}`,
+                    backgroundColor: isDark
+                      ? 'rgba(9, 12, 17, 0.38)'
+                      : 'rgba(255,255,255,0.55)',
+                    color: accent,
+                    fontSize: 9,
+                    fontWeight: 700,
+                    letterSpacing: '0.22em',
                     textTransform: 'uppercase',
-                    color: theme.muted,
                   }}
                 >
+                  <Sparkles size={10} />
                   Codecard
-                </p>
+                </span>
               ) : null}
               <p
                 style={{
-                  marginTop: hasWatermark ? 6 : 0,
-                  fontSize: 13,
+                  fontSize: 11,
                   color: theme.muted,
+                  letterSpacing: '0.02em',
                 }}
               >
                 {profile.isSample ? 'Design preview' : 'Verified profile'}
@@ -286,13 +586,14 @@ export const ProfileCard = forwardRef<HTMLDivElement, ProfileCardProps>(
             </div>
           </header>
 
+          {/* Identity and rating band */}
           <section
             style={{
-              marginTop: isDark ? 44 : 46,
+              marginTop: 22,
               display: 'flex',
               flexShrink: 0,
               alignItems: 'center',
-              gap: 40,
+              gap: 26,
             }}
           >
             <div style={{ position: 'relative', flexShrink: 0 }}>
@@ -300,43 +601,37 @@ export const ProfileCard = forwardRef<HTMLDivElement, ProfileCardProps>(
                 aria-hidden="true"
                 style={{
                   position: 'absolute',
-                  inset: isDark ? -12 : -16,
+                  inset: -18,
                   borderRadius: '50%',
-                  background: isDark
-                    ? `radial-gradient(circle, ${withAlpha(accent, 0.3)}, transparent 70%)`
-                    : 'radial-gradient(circle, rgba(167,139,250,0.16), transparent 72%)',
-                  filter: 'blur(16px)',
+                  background: `radial-gradient(circle, ${withAlpha(rankColor, isDark ? 0.32 : 0.2)}, transparent 68%)`,
+                  filter: 'blur(18px)',
                 }}
               />
               <div
                 style={{
                   position: 'relative',
-                  padding: isDark ? 4 : 5,
+                  padding: 5,
                   borderRadius: '50%',
-                  background: isDark
-                    ? 'linear-gradient(145deg, rgba(255,255,255,0.24), rgba(255,255,255,0.03))'
-                    : '#FFFFFF',
-                  boxShadow: isDark
-                    ? '0 0 0 1px rgba(255,255,255,0.06), 0 24px 50px rgba(0,0,0,0.48)'
-                    : '0 18px 40px rgba(23,23,29,0.12), 0 0 0 1px #E8E8ED',
+                  background: `linear-gradient(145deg, ${withAlpha(rankColor, 0.9)}, ${withAlpha(accent, 0.55)} 52%, ${withAlpha(rankColor, 0.28)})`,
+                  boxShadow: `0 0 0 1px ${withAlpha(rankColor, 0.34)}, 0 0 34px ${withAlpha(rankColor, isDark ? 0.24 : 0.16)}, 0 22px 44px rgba(0,0,0,${isDark ? 0.48 : 0.18})`,
                 }}
               >
                 <div
                   style={{
-                    padding: 3,
+                    padding: 4,
                     borderRadius: '50%',
-                    backgroundColor: isDark ? theme.background : '#F5F5F7',
+                    backgroundColor: isDark ? theme.background : '#F2F4F7',
                   }}
                 >
                   <ProfileAvatar
                     src={profile.avatarDataUrl ?? profile.avatarUrl}
                     initials={profile.initials}
-                    size={168}
-                    accent={accent}
+                    size={156}
+                    accent={rankColor}
                     border="none"
                     background={
                       isDark
-                        ? 'radial-gradient(circle at 30% 22%, rgba(215,180,94,0.22), transparent 62%), linear-gradient(145deg, #24272D, #0D0E11)'
+                        ? 'radial-gradient(circle at 30% 22%, rgba(95,208,160,0.2), transparent 62%), linear-gradient(145deg, #24272D, #0D0E11)'
                         : 'linear-gradient(145deg, #FFFFFF, #F0F0F4)'
                     }
                     color={isDark ? '#EEF1F6' : '#17171D'}
@@ -347,305 +642,346 @@ export const ProfileCard = forwardRef<HTMLDivElement, ProfileCardProps>(
                 aria-hidden="true"
                 style={{
                   position: 'absolute',
-                  right: isDark ? 2 : 4,
-                  bottom: isDark ? 2 : 4,
-                  width: 20,
-                  height: 20,
+                  right: 1,
+                  bottom: 1,
+                  display: 'flex',
+                  width: 30,
+                  height: 30,
+                  alignItems: 'center',
+                  justifyContent: 'center',
                   borderRadius: '50%',
-                  backgroundColor: accent,
-                  border: `4px solid ${isDark ? theme.background : '#FFFFFF'}`,
+                  backgroundColor: isDark ? theme.background : '#F2F4F7',
+                  border: `1px solid ${withAlpha(rankColor, 0.45)}`,
+                  color: rankColor,
+                  boxShadow: `0 0 16px ${withAlpha(rankColor, 0.35)}`,
                 }}
-              />
+              >
+                <Crown size={14} strokeWidth={2.1} />
+              </span>
             </div>
 
             <div style={{ minWidth: 0, flex: 1 }}>
-              <span
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 8,
-                  padding: '7px 14px',
-                  borderRadius: 9999,
-                  border: `1px solid ${accentBorder}`,
-                  backgroundColor: accentSoft,
-                  color: accent,
-                  fontSize: 12,
-                  fontWeight: 500,
-                  letterSpacing: '0.16em',
-                  textTransform: 'uppercase',
-                }}
-              >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <RankBadge
+                  rank={profile.rank}
+                  rankColor={rankColor}
+                  accent={accent}
+                />
                 <span
                   style={{
-                    width: 6,
-                    height: 6,
-                    borderRadius: '50%',
-                    backgroundColor: accent,
+                    fontSize: 10,
+                    letterSpacing: '0.18em',
+                    textTransform: 'uppercase',
+                    color: theme.muted,
+                    textShadow: heroShadow,
                   }}
-                />
-                {profile.rank ?? 'Unrated'}
-              </span>
+                >
+                  {profile.maxRank ? `Peak ${profile.maxRank}` : 'Codeforces'}
+                </span>
+              </div>
 
               <h2
                 style={{
-                  marginTop: 16,
+                  marginTop: 10,
                   fontSize: handleFontSize(profile.handle),
-                  fontWeight: 600,
-                  lineHeight: 1.02,
-                  letterSpacing: '-0.045em',
+                  fontWeight: 700,
+                  lineHeight: 0.98,
+                  letterSpacing: '-0.05em',
                   color: theme.text,
+                  textShadow: heroShadow,
                   overflowWrap: 'anywhere',
                 }}
               >
-                @{profile.handle}
+                <span style={{ color: theme.muted, fontWeight: 500 }}>@</span>
+                {profile.handle}
               </h2>
 
               <p
                 style={{
-                  marginTop: 12,
-                  fontSize: 15,
-                  letterSpacing: '0.01em',
+                  marginTop: 8,
+                  maxWidth: 560,
+                  fontSize: 16,
+                  fontStyle: 'italic',
+                  lineHeight: 1.3,
                   color: theme.muted,
+                  textShadow: heroShadow,
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                }}
+              >
+                &ldquo;{designation}&rdquo;
+              </p>
+
+              <p
+                style={{
+                  marginTop: 5,
+                  fontSize: 11.5,
+                  letterSpacing: '0.02em',
+                  color: theme.muted,
+                  textShadow: heroShadow,
                 }}
               >
                 {identityLine || 'Codeforces profile'}
               </p>
             </div>
-          </section>
 
-          <div
-            style={{
-              marginTop: isDark ? 30 : 32,
-              height: 1,
-              flexShrink: 0,
-              width: '100%',
-              backgroundColor: theme.border,
-            }}
-          />
-
-          <section
-            style={{
-              marginTop: isDark ? 28 : 30,
-              display: 'flex',
-              flexShrink: 0,
-              alignItems: 'flex-end',
-              justifyContent: 'space-between',
-              gap: 40,
-            }}
-          >
-            <div>
-              <p
-                style={{
-                  fontSize: 11,
-                  letterSpacing: '0.28em',
-                  textTransform: 'uppercase',
-                  color: theme.muted,
-                }}
-              >
-                Current rating
-              </p>
+            <GlassPanel
+              theme={theme}
+              accent={accent}
+              radius={24}
+              style={{
+                width: 404,
+                flexShrink: 0,
+                padding: '17px 22px 16px',
+              }}
+            >
               <div
                 style={{
-                  marginTop: 12,
                   display: 'flex',
-                  alignItems: 'flex-end',
+                  alignItems: 'flex-start',
+                  justifyContent: 'space-between',
                   gap: 20,
                 }}
               >
-                <span
-                  className="tabular"
-                  style={{
-                    fontSize: 128,
-                    fontWeight: 600,
-                    lineHeight: 0.82,
-                    letterSpacing: '-0.065em',
-                    color: theme.text,
-                  }}
-                >
-                  {formatNumber(profile.rating)}
-                </span>
-                <span
-                  style={{
-                    marginBottom: 10,
-                    fontSize: 17,
-                    fontWeight: 500,
-                    letterSpacing: '0.01em',
-                    color: accent,
-                  }}
-                >
-                  {profile.rank ?? 'Unrated'}
-                </span>
-              </div>
-            </div>
-
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'flex-end',
-                gap: isDark ? 48 : 52,
-                paddingBottom: 8,
-                textAlign: 'right',
-              }}
-            >
-              <div>
-                <p
-                  style={{
-                    fontSize: 11,
-                    letterSpacing: '0.24em',
-                    textTransform: 'uppercase',
-                    color: theme.muted,
-                  }}
-                >
-                  Max rating
-                </p>
-                <p
-                  className="tabular"
-                  style={{
-                    marginTop: 8,
-                    fontSize: 38,
-                    fontWeight: 600,
-                    lineHeight: 1,
-                    letterSpacing: '-0.04em',
-                    color: accent,
-                  }}
-                >
-                  {formatNumber(profile.maxRating)}
-                </p>
-              </div>
-              {showMemberSince ? (
-                <div>
+                <div style={{ minWidth: 0 }}>
                   <p
                     style={{
-                      fontSize: 11,
+                      fontSize: 9,
+                      fontWeight: 600,
                       letterSpacing: '0.24em',
                       textTransform: 'uppercase',
                       color: theme.muted,
                     }}
                   >
-                    Member since
+                    Current rating
+                  </p>
+                  <div
+                    style={{
+                      marginTop: 2,
+                      display: 'flex',
+                      alignItems: 'flex-end',
+                      gap: 8,
+                    }}
+                  >
+                    <span
+                      className="tabular"
+                      style={{
+                        fontSize: 94,
+                        fontWeight: 700,
+                        lineHeight: 0.82,
+                        letterSpacing: '-0.07em',
+                        color: theme.text,
+                        textShadow: `0 0 32px ${withAlpha(accent, isDark ? 0.34 : 0.18)}`,
+                      }}
+                    >
+                      {formatNumber(profile.rating)}
+                    </span>
+                  </div>
+                  <div
+                    style={{
+                      marginTop: 10,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 7,
+                    }}
+                  >
+                    <span
+                      style={{
+                        width: 6,
+                        height: 6,
+                        borderRadius: '50%',
+                        backgroundColor: rankColor,
+                        boxShadow: `0 0 8px ${withAlpha(rankColor, 0.65)}`,
+                      }}
+                    />
+                    <span
+                      style={{
+                        fontSize: 12,
+                        fontWeight: 600,
+                        letterSpacing: '0.04em',
+                        color: rankColor,
+                      }}
+                    >
+                      {profile.rank ?? 'Unrated'}
+                    </span>
+                  </div>
+                </div>
+
+                <div
+                  style={{
+                    textAlign: 'right',
+                    flexShrink: 0,
+                    paddingTop: 2,
+                  }}
+                >
+                  <p
+                    style={{
+                      fontSize: 8.5,
+                      fontWeight: 600,
+                      letterSpacing: '0.2em',
+                      textTransform: 'uppercase',
+                      color: theme.muted,
+                    }}
+                  >
+                    Max rating
                   </p>
                   <p
                     className="tabular"
                     style={{
-                      marginTop: 8,
-                      fontSize: 24,
-                      fontWeight: 500,
+                      marginTop: 3,
+                      fontSize: 30,
+                      fontWeight: 700,
                       lineHeight: 1,
-                      color: theme.text,
+                      letterSpacing: '-0.05em',
+                      color: accent,
                     }}
                   >
-                    {memberSinceLabel}
+                    {formatNumber(peakRating)}
+                  </p>
+                  <p
+                    style={{
+                      marginTop: 5,
+                      fontSize: 9.5,
+                      color: theme.muted,
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {profile.maxRank ?? 'Peak rating'}
                   </p>
                 </div>
-              ) : null}
-            </div>
+              </div>
+              <div
+                aria-hidden="true"
+                style={{
+                  marginTop: 13,
+                  height: 2,
+                  borderRadius: 9999,
+                  background: `linear-gradient(90deg, ${withAlpha(rankColor, 0.85)}, ${withAlpha(accent, 0.5)} 46%, transparent)`,
+                }}
+              />
+            </GlassPanel>
           </section>
 
-          {hasRatingChart ? (
-            <section
-              style={{
-                ...surfaceStyle(theme, 28),
-                marginTop: 24,
-                flexShrink: 0,
-                padding: isDark ? '22px 24px 18px' : '24px 26px 20px',
-              }}
-            >
+          <div
+            style={{
+              marginTop: 18,
+              display: 'grid',
+              gridTemplateColumns:
+                hasLeftColumn && hasRightColumn
+                  ? 'minmax(0, 1.55fr) minmax(0, 1fr)'
+                  : 'minmax(0, 1fr)',
+              gap: 16,
+              flex: 1,
+              minHeight: 0,
+            }}
+          >
+            {hasLeftColumn ? (
               <div
                 style={{
                   display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
+                  minHeight: 0,
+                  flexDirection: 'column',
+                  gap: 16,
                 }}
               >
-                <p
+                {hasRatingChart ? (
+                <GlassPanel
+                  theme={theme}
+                  accent={accent}
+                  radius={22}
                   style={{
-                    fontSize: 11,
-                    letterSpacing: '0.26em',
-                    textTransform: 'uppercase',
-                    color: theme.muted,
+                    flex: 1,
+                    minHeight: 0,
+                    padding: '16px 20px 12px',
                   }}
                 >
-                  Rating history
-                </p>
-                <p style={{ fontSize: 12, color: theme.muted }}>
-                  Peak{' '}
-                  <span style={{ color: theme.text }}>
-                    {formatNumber(peakRating)}
-                  </span>
-                </p>
-              </div>
-              <div style={{ marginTop: 4 }}>
-                <RatingLineChart
-                  data={profile.ratingHistory.slice(-26)}
-                  accent={accent}
-                  compact
-                  showAxis
-                  showGrid
-                  interactive={false}
-                  gridColor={theme.chartGrid}
-                  labelColor={theme.chartLabel}
-                  dotFill={theme.chartDot}
-                />
-              </div>
-            </section>
-          ) : null}
-
-          {hasStats ? (
-            <section
-              style={{
-                ...surfaceStyle(theme, 24),
-                marginTop: 24,
-                flexShrink: 0,
-                overflow: 'hidden',
-              }}
-            >
-              <div
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: `repeat(${stats.length}, minmax(0, 1fr))`,
-                }}
-              >
-                {stats.map((stat, index) => (
                   <div
-                    key={stat.label}
                     style={{
-                      padding: isDark ? '24px 26px' : '26px 28px',
-                      borderLeft:
-                        index === 0 ? 'none' : `1px solid ${theme.border}`,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      gap: 16,
+                      flexShrink: 0,
                     }}
                   >
-                    <p
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span
+                        style={{
+                          width: 6,
+                          height: 6,
+                          borderRadius: '50%',
+                          backgroundColor: accent,
+                          boxShadow: `0 0 10px ${withAlpha(accent, 0.65)}`,
+                        }}
+                      />
+                      <p
+                        style={{
+                          fontSize: 9.5,
+                          fontWeight: 600,
+                          letterSpacing: '0.24em',
+                          textTransform: 'uppercase',
+                          color: theme.muted,
+                        }}
+                      >
+                        Rating history
+                      </p>
+                    </div>
+                    <span
                       style={{
-                        fontSize: 10,
-                        letterSpacing: '0.2em',
-                        textTransform: 'uppercase',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 6,
+                        padding: '4px 9px',
+                        borderRadius: 9999,
+                        border: `1px solid ${accentBorder}`,
+                        backgroundColor: accentSoft,
+                        fontSize: 9.5,
                         color: theme.muted,
+                        whiteSpace: 'nowrap',
                       }}
                     >
-                      {stat.label}
-                    </p>
-                    <p
-                      className="tabular"
-                      style={{
-                        marginTop: 10,
-                        fontSize: 38,
-                        fontWeight: 600,
-                        lineHeight: 1,
-                        letterSpacing: '-0.045em',
-                        color: stat.highlight ? accent : theme.text,
-                      }}
-                    >
-                      {stat.value}
-                    </p>
+                      Peak
+                      <strong style={{ color: accent, fontWeight: 700 }}>
+                        {formatNumber(peakRating)}
+                      </strong>
+                    </span>
                   </div>
-                ))}
-              </div>
+                  <div
+                    style={{
+                      marginTop: 2,
+                      display: 'flex',
+                      flex: 1,
+                      minHeight: 0,
+                      alignItems: 'center',
+                    }}
+                  >
+                    <RatingLineChart
+                      data={profile.ratingHistory.slice(-26)}
+                      accent={accent}
+                      compact
+                      showAxis
+                      showGrid
+                      interactive={false}
+                      height={hasRightColumn ? 430 : 260}
+                      labelSize={14}
+                      gridColor={theme.chartGrid}
+                      labelColor={theme.chartLabel}
+                      dotFill={theme.chartDot}
+                    />
+                  </div>
+                </GlassPanel>
+              ) : null}
 
-              {hasDifficulty && peakBucket ? (
-                <div
+              {hasHeatmap && activity ? (
+                <GlassPanel
+                  theme={theme}
+                  accent={accent}
+                  radius={20}
                   style={{
-                    borderTop: `1px solid ${theme.border}`,
-                    padding: isDark ? '16px 26px 18px' : '18px 28px 20px',
+                    flex: hasRatingChart ? '0 0 auto' : 1,
+                    minHeight: 0,
+                    padding: '14px 20px 12px',
                   }}
                 >
                   <div
@@ -656,127 +992,517 @@ export const ProfileCard = forwardRef<HTMLDivElement, ProfileCardProps>(
                       gap: 16,
                     }}
                   >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span
+                        style={{
+                          width: 6,
+                          height: 6,
+                          borderRadius: '50%',
+                          backgroundColor: heatmapPalette.bright,
+                          boxShadow: `0 0 10px ${withAlpha(heatmapPalette.bright, 0.55)}`,
+                        }}
+                      />
+                      <p
+                        style={{
+                          fontSize: 9.5,
+                          fontWeight: 600,
+                          letterSpacing: '0.24em',
+                          textTransform: 'uppercase',
+                          color: theme.muted,
+                        }}
+                      >
+                        52-week activity
+                      </p>
+                    </div>
                     <p
                       style={{
-                        fontSize: 10,
-                        letterSpacing: '0.2em',
-                        textTransform: 'uppercase',
+                        fontSize: 10.5,
                         color: theme.muted,
+                        whiteSpace: 'nowrap',
                       }}
                     >
-                      Difficulty spread
-                    </p>
-                    <p style={{ fontSize: 11, color: theme.muted }}>
-                      {profile.unratedSolved
-                        ? `${formatNumber(profile.unratedSolved)} unrated · `
-                        : ''}
-                      Peak{' '}
-                      <span style={{ color: theme.text }}>
-                        {peakBucket.label}
-                      </span>
+                      <strong style={{ color: theme.text, fontWeight: 600 }}>
+                        {formatNumber(heatmapSubmissions)}
+                      </strong>{' '}
+                      submissions ·{' '}
+                      <strong style={{ color: theme.text, fontWeight: 600 }}>
+                        {formatNumber(heatmapActiveDays)}
+                      </strong>{' '}
+                      active days
+                      {activity.isPartial ? (
+                        <span
+                          style={{
+                            marginLeft: 8,
+                            color: isDark ? '#F5C26B' : '#B45309',
+                            fontWeight: 600,
+                          }}
+                        >
+                          Partial history
+                        </span>
+                      ) : null}
                     </p>
                   </div>
+
                   <div
                     style={{
                       marginTop: 10,
                       display: 'flex',
-                      height: 8,
-                      gap: 3,
-                      overflow: 'hidden',
-                      borderRadius: 9999,
-                      backgroundColor: isDark
-                        ? 'rgba(255,255,255,0.045)'
-                        : '#F0F0F4',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 2,
                     }}
                   >
-                    {profile.difficulty.map((bucket, index) => (
+                    {displayedWeeks.map((week, weekIndex) => (
                       <div
-                        key={bucket.label}
+                        key={weekIndex}
                         style={{
-                          width: `${(bucket.solved / difficultyTotal) * 100}%`,
-                          backgroundColor: withAlpha(
-                            accent,
-                            0.2 + (index / 7) * 0.72,
-                          ),
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: 2,
                         }}
-                      />
+                      >
+                        {week.map((day) => {
+                          const level = getHeatmapLevel(day.submissions)
+                          const cellBg =
+                            level === 0
+                              ? heatmapPalette.zero
+                              : level === 1
+                                ? heatmapPalette.bright
+                                : level === 2
+                                  ? heatmapPalette.medium
+                                  : heatmapPalette.rich
+                          const glow =
+                            level === 1
+                              ? `0 0 7px ${withAlpha(heatmapPalette.bright, 0.42)}`
+                              : level === 2
+                                ? `0 0 5px ${withAlpha(heatmapPalette.medium, 0.24)}`
+                                : 'none'
+
+                          return (
+                            <div
+                              key={day.date}
+                              style={{
+                                width: 12,
+                                height: 12,
+                                borderRadius: 3,
+                                backgroundColor: cellBg,
+                                boxShadow: glow,
+                              }}
+                            />
+                          )
+                        })}
+                      </div>
                     ))}
                   </div>
-                </div>
-              ) : null}
-            </section>
-          ) : null}
 
-          {hasTopics ? (
-            <section style={{ marginTop: 24, flexShrink: 0 }}>
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                }}
-              >
-                <p
-                  style={{
-                    fontSize: 11,
-                    letterSpacing: '0.26em',
-                    textTransform: 'uppercase',
-                    color: theme.muted,
-                  }}
-                >
-                  Top problem topics
-                </p>
-                <p style={{ fontSize: 12, color: theme.muted }}>
-                  {profile.topics.length} tags explored
-                </p>
-              </div>
-              <div
-                style={{
-                  marginTop: 16,
-                  display: 'flex',
-                  flexWrap: 'wrap',
-                  gap: 10,
-                }}
-              >
-                {profile.topics.slice(0, 5).map((topic) => (
-                  <span
-                    key={topic.tag}
+                  <div
                     style={{
-                      display: 'inline-flex',
+                      display: 'flex',
                       alignItems: 'center',
-                      gap: 8,
-                      padding: '8px 14px',
-                      borderRadius: 9999,
-                      border: `1px solid ${theme.border}`,
-                      backgroundColor: theme.elevated,
-                      color: theme.text,
-                      fontSize: 13,
+                      justifyContent: 'flex-end',
+                      gap: 10,
+                      marginTop: 9,
+                      fontSize: 8.5,
+                      color: theme.muted,
                     }}
                   >
                     <span
                       style={{
-                        width: 6,
-                        height: 6,
-                        borderRadius: '50%',
-                        backgroundColor: accent,
-                        opacity: 0.85,
+                        letterSpacing: '0.16em',
+                        textTransform: 'uppercase',
+                        opacity: 0.72,
+                      }}
+                    >
+                      Submissions
+                    </span>
+                    {[
+                      { label: '0', color: heatmapPalette.zero },
+                      { label: '1–3', color: heatmapPalette.bright },
+                      { label: '4–9', color: heatmapPalette.medium },
+                      { label: '10+', color: heatmapPalette.rich },
+                    ].map((item) => (
+                      <span
+                        key={item.label}
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 4,
+                        }}
+                      >
+                        <span
+                          style={{
+                            width: 9,
+                            height: 9,
+                            borderRadius: 2.5,
+                            backgroundColor: item.color,
+                            boxShadow:
+                              item.label === '1–3'
+                                ? `0 0 6px ${withAlpha(item.color, 0.45)}`
+                                : 'none',
+                          }}
+                        />
+                        {item.label}
+                      </span>
+                    ))}
+                  </div>
+                </GlassPanel>
+              ) : null}
+              </div>
+            ) : null}
+
+            {hasRightColumn ? (
+              <div
+                style={{
+                  display: 'flex',
+                  minHeight: 0,
+                  flexDirection: 'column',
+                  gap: 12,
+                }}
+              >
+                <div
+                  style={{
+                    display: 'flex',
+                    flex: 1,
+                    minHeight: 0,
+                    flexDirection: 'column',
+                    gap: 12,
+                  }}
+                >
+                  {showSolved || showActiveDays ? (
+                    <div
+                      style={{
+                        display: 'grid',
+                        gridTemplateColumns:
+                          showSolved && showActiveDays
+                            ? 'minmax(0, 1fr) minmax(0, 1fr)'
+                            : 'minmax(0, 1fr)',
+                        gap: 12,
+                        flex: 1,
+                        minHeight: 0,
+                      }}
+                    >
+                      {showSolved ? (
+                        <AchievementTile
+                          theme={theme}
+                          accent={accent}
+                          label="Unique solved"
+                          icon={<Trophy size={14} strokeWidth={2.1} />}
+                        >
+                          <p
+                            className="tabular"
+                            style={{
+                              fontSize: 56,
+                              fontWeight: 700,
+                              lineHeight: 0.92,
+                              letterSpacing: '-0.06em',
+                              color: theme.text,
+                            }}
+                          >
+                            {formatNumber(profile.problemsSolved)}
+                          </p>
+                          <p
+                            style={{
+                              marginTop: 6,
+                              fontSize: 12,
+                              color: theme.muted,
+                            }}
+                          >
+                            problems accepted
+                          </p>
+                        </AchievementTile>
+                      ) : null}
+
+                      {showActiveDays ? (
+                        <AchievementTile
+                          theme={theme}
+                          accent={accent}
+                          label="Active days"
+                          icon={<CalendarDays size={14} strokeWidth={2.1} />}
+                        >
+                          <p
+                            className="tabular"
+                            style={{
+                              fontSize: 56,
+                              fontWeight: 700,
+                              lineHeight: 0.92,
+                              letterSpacing: '-0.06em',
+                              color: theme.text,
+                            }}
+                          >
+                            {formatNumber(activity?.activeDays)}
+                          </p>
+                          <p
+                            style={{
+                              marginTop: 6,
+                              fontSize: 12,
+                              color: theme.muted,
+                            }}
+                          >
+                            days with submissions
+                          </p>
+                        </AchievementTile>
+                      ) : null}
+                    </div>
+                  ) : null}
+
+                  {showHardest ? (
+                    <AchievementTile
+                      theme={theme}
+                      accent={accent}
+                      label="Hardest solved"
+                      icon={<Crown size={14} strokeWidth={2.1} />}
+                      iconSize={30}
+                      style={{
+                        flex: 1,
+                        borderColor: withAlpha(accent, isDark ? 0.26 : 0.2),
+                      }}
+                    >
+                      <div
+                        style={{
+                          display: 'flex',
+                          alignItems: 'flex-end',
+                          justifyContent: 'space-between',
+                          gap: 14,
+                        }}
+                      >
+                        <div style={{ minWidth: 0 }}>
+                          {hardest ? (
+                            <>
+                              <p
+                                style={{
+                                  fontSize: 26,
+                                  fontWeight: 700,
+                                  lineHeight: 1.18,
+                                  letterSpacing: '-0.03em',
+                                  color: theme.text,
+                                  display: '-webkit-box',
+                                  WebkitLineClamp: 2,
+                                  WebkitBoxOrient: 'vertical',
+                                  overflow: 'hidden',
+                                }}
+                              >
+                                {hardest.name}
+                              </p>
+                              <p
+                                style={{
+                                  marginTop: 6,
+                                  fontSize: 12,
+                                  color: theme.muted,
+                                  whiteSpace: 'nowrap',
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis',
+                                }}
+                              >
+                                {hardest.contestId
+                                  ? `Problem ${hardest.contestId}${hardest.index}`
+                                  : hardest.index}
+                              </p>
+                            </>
+                          ) : (
+                            <p
+                              style={{
+                                fontSize: 15,
+                                color: theme.muted,
+                              }}
+                            >
+                              No rated solves available
+                            </p>
+                          )}
+                        </div>
+                        {hardest ? (
+                          <span
+                            className="tabular"
+                            style={{
+                              display: 'inline-flex',
+                              flexShrink: 0,
+                              alignItems: 'center',
+                              padding: '6px 13px',
+                              borderRadius: 9999,
+                              border: `1px solid ${withAlpha(accent, 0.4)}`,
+                              backgroundColor: withAlpha(accent, 0.13),
+                              color: accent,
+                              fontSize: 20,
+                              fontWeight: 700,
+                              letterSpacing: '-0.02em',
+                            }}
+                          >
+                            {hardest.rating}
+                          </span>
+                        ) : null}
+                      </div>
+                    </AchievementTile>
+                  ) : null}
+
+                  {showStreak ? (
+                    <AchievementTile
+                      theme={theme}
+                      accent={accent}
+                      label="Longest streak"
+                      icon={<Flame size={23} strokeWidth={2.1} />}
+                      iconSize={36}
+                      iconProminent
+                      style={{ flex: 1 }}
+                    >
+                      <div
+                        style={{
+                          display: 'flex',
+                          alignItems: 'flex-end',
+                          gap: 10,
+                        }}
+                      >
+                        <p
+                          className="tabular"
+                          style={{
+                            fontSize: 68,
+                            fontWeight: 700,
+                            lineHeight: 0.88,
+                            letterSpacing: '-0.06em',
+                            color: theme.text,
+                          }}
+                        >
+                          {formatNumber(activity?.longestStreak)}
+                        </p>
+                        <span
+                          style={{
+                            marginBottom: 7,
+                            fontSize: 13.5,
+                            color: theme.muted,
+                          }}
+                        >
+                          consecutive days
+                        </span>
+                      </div>
+                      <p
+                        style={{
+                          marginTop: 6,
+                          fontSize: 12,
+                          color: theme.muted,
+                        }}
+                      >
+                        personal coding rhythm
+                      </p>
+                    </AchievementTile>
+                  ) : null}
+                </div>
+
+                {showQuote ? (
+                  <div
+                    style={{
+                      ...glassSurface(theme, 18),
+                      display: 'flex',
+                      flex: hasAchievements ? '0 0 auto' : 1,
+                      flexDirection: 'column',
+                      justifyContent: 'center',
+                      padding: '14px 18px 14px 20px',
+                    }}
+                  >
+                    <GlassSheen
+                      accent={accent}
+                      radius={18}
+                      isDark={isDark}
+                    />
+                    <span
+                      aria-hidden="true"
+                      style={{
+                        position: 'absolute',
+                        top: 0,
+                        bottom: 0,
+                        left: 0,
+                        width: 2,
+                        background: `linear-gradient(180deg, transparent, ${withAlpha(accent, 0.85)}, transparent)`,
                       }}
                     />
-                    {topic.tag}
-                    <span
-                      className="tabular"
-                      style={{ color: theme.muted }}
-                    >
-                      {topic.solved}
-                    </span>
-                  </span>
-                ))}
+                    <div style={{ position: 'relative', zIndex: 1 }}>
+                      <p
+                        style={{
+                          fontSize: 8.5,
+                          fontWeight: 600,
+                          letterSpacing: '0.22em',
+                          textTransform: 'uppercase',
+                          color: theme.muted,
+                        }}
+                      >
+                        Personal motto
+                      </p>
+                      <p
+                        style={{
+                          marginTop: 5,
+                          fontFamily:
+                            "Georgia, 'Times New Roman', 'Iowan Old Style', serif",
+                          fontSize: 18,
+                          fontStyle: 'italic',
+                          lineHeight: 1.3,
+                          letterSpacing: '-0.01em',
+                          color: theme.text,
+                          display: '-webkit-box',
+                          WebkitLineClamp: 2,
+                          WebkitBoxOrient: 'vertical',
+                          overflow: 'hidden',
+                        }}
+                      >
+                        &ldquo;{quote}&rdquo;
+                      </p>
+                    </div>
+                  </div>
+                ) : null}
               </div>
-            </section>
-          ) : null}
+            ) : null}
+
+            {!hasLeftColumn && !hasRightColumn ? (
+              <div
+                style={{
+                  display: 'flex',
+                  minHeight: 0,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <div style={{ textAlign: 'center' }}>
+                  <div
+                    aria-hidden="true"
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'center',
+                      color: accent,
+                      opacity: isDark ? 0.24 : 0.16,
+                    }}
+                  >
+                    <CodeforcesMark size={76} />
+                  </div>
+                  <p
+                    style={{
+                      marginTop: 18,
+                      fontSize: 40,
+                      fontWeight: 700,
+                      letterSpacing: '-0.05em',
+                      color: theme.text,
+                      opacity: 0.88,
+                    }}
+                  >
+                    @{profile.handle}
+                  </p>
+                  <p
+                    style={{
+                      marginTop: 8,
+                      fontSize: 10,
+                      letterSpacing: '0.3em',
+                      textTransform: 'uppercase',
+                      color: theme.muted,
+                    }}
+                  >
+                    Codeforces profile
+                  </p>
+                </div>
+              </div>
+            ) : null}
+          </div>
 
           <footer
-            style={{ marginTop: 'auto', flexShrink: 0, paddingTop: 26 }}
+            style={{
+              marginTop: 'auto',
+              flexShrink: 0,
+              paddingTop: 14,
+            }}
           >
             <div
               style={{
@@ -787,7 +1513,7 @@ export const ProfileCard = forwardRef<HTMLDivElement, ProfileCardProps>(
             />
             <div
               style={{
-                marginTop: 22,
+                marginTop: 11,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
@@ -797,12 +1523,16 @@ export const ProfileCard = forwardRef<HTMLDivElement, ProfileCardProps>(
               {hasWatermark ? (
                 <p
                   style={{
-                    fontSize: 17,
-                    fontWeight: 500,
-                    letterSpacing: '0.01em',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 7,
+                    fontSize: 12,
+                    fontWeight: 600,
+                    letterSpacing: '0.02em',
                     color: accent,
                   }}
                 >
+                  <Sparkles size={11} />
                   Dream. Solve. Repeat.
                 </p>
               ) : (
@@ -811,7 +1541,7 @@ export const ProfileCard = forwardRef<HTMLDivElement, ProfileCardProps>(
               <p
                 style={{
                   marginLeft: 'auto',
-                  fontSize: 12,
+                  fontSize: 10.5,
                   color: theme.muted,
                 }}
               >

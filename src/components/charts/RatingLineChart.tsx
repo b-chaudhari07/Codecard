@@ -12,6 +12,10 @@ interface RatingLineChartProps {
   showAxis?: boolean
   showGrid?: boolean
   interactive?: boolean
+  /** Optional viewBox height, used to fit the chart inside the exported card. */
+  height?: number
+  /** Optional axis label size in viewBox units. */
+  labelSize?: number
   className?: string
   /** Theme-aware colours used by the exported card. */
   gridColor?: string
@@ -54,8 +58,9 @@ function buildGeometry(
   data: RatingPoint[],
   compact: boolean,
   showAxis: boolean,
+  heightOverride?: number,
 ): ChartGeometry {
-  const height = compact ? 300 : 320
+  const height = heightOverride ?? (compact ? 300 : 320)
   const padding = {
     top: compact ? 26 : 28,
     right: compact ? 12 : 16,
@@ -134,6 +139,8 @@ export function RatingLineChart({
   showAxis = true,
   showGrid = true,
   interactive = true,
+  height,
+  labelSize,
   className,
   gridColor,
   labelColor,
@@ -142,8 +149,8 @@ export function RatingLineChart({
   const gradientId = useId()
   const [activeIndex, setActiveIndex] = useState<number | null>(null)
   const geometry = useMemo(
-    () => buildGeometry(data, compact, showAxis),
-    [data, compact, showAxis],
+    () => buildGeometry(data, compact, showAxis, height),
+    [data, compact, showAxis, height],
   )
 
   if (data.length === 0) return null
@@ -215,7 +222,7 @@ export function RatingLineChart({
                 x2={geometry.width - geometry.padding.right}
                 y1={y}
                 y2={y}
-                stroke={gridColor ?? (compact ? 'rgba(255,255,255,0.06)' : '#202227')}
+                stroke={gridColor ?? 'var(--app-chart-grid)'}
                 strokeWidth={1}
                 strokeDasharray={index === geometry.gridLines.length - 1 ? undefined : '3 7'}
               />
@@ -245,7 +252,7 @@ export function RatingLineChart({
           cx={geometry.peak.x}
           cy={geometry.peak.y}
           r={compact ? 5 : 4}
-          fill={dotFill ?? (compact ? '#0B0C0F' : '#151619')}
+          fill={dotFill ?? 'var(--app-chart-dot)'}
           stroke={accent}
           strokeOpacity={0.45}
           strokeWidth={2}
@@ -268,7 +275,7 @@ export function RatingLineChart({
           cx={geometry.current.x}
           cy={geometry.current.y}
           r={compact ? 4 : 3}
-          fill={dotFill ?? (compact ? '#0B0C0F' : '#151619')}
+          fill={dotFill ?? 'var(--app-chart-dot)'}
         />
 
         {active ? (
@@ -287,7 +294,7 @@ export function RatingLineChart({
               cy={active.y}
               r={6}
               fill={accent}
-              stroke={dotFill ?? '#0B0C0F'}
+              stroke={dotFill ?? 'var(--app-chart-dot)'}
               strokeWidth={3}
             />
           </>
@@ -306,11 +313,8 @@ export function RatingLineChart({
                       ? 'end'
                       : 'middle'
                 }
-                fill={
-                  labelColor ??
-                  (compact ? 'rgba(255,255,255,0.34)' : '#6E7078')
-                }
-                fontSize={compact ? 20 : 18}
+                fill={labelColor ?? 'var(--app-chart-label)'}
+                fontSize={labelSize ?? (compact ? 20 : 18)}
                 fontFamily="inherit"
               >
                 {tick.label}
@@ -321,7 +325,7 @@ export function RatingLineChart({
 
       {interactive && active && activePoint ? (
         <div
-          className="pointer-events-none absolute z-10 -translate-x-1/2 -translate-y-[calc(100%+14px)] rounded-xl border border-line bg-surface/95 px-3 py-2 shadow-xl shadow-black/40 backdrop-blur"
+          className="pointer-events-none absolute z-10 -translate-x-1/2 -translate-y-[calc(100%+14px)] rounded-xl border border-line bg-surface/95 px-3 py-2 shadow-xl shadow-black/10 backdrop-blur dark:shadow-black/40"
           style={tooltipStyle}
         >
           <p className="text-xs font-semibold text-ink tabular">
@@ -337,8 +341,8 @@ export function RatingLineChart({
             <span
               className={
                 activePoint.change >= 0
-                  ? 'text-emerald-300/90'
-                  : 'text-rose-300/90'
+                  ? 'text-positive'
+                  : 'text-negative'
               }
             >
               {formatSigned(activePoint.change)}

@@ -74,9 +74,9 @@ export function Hero({
           >
             <div
               className={cn(
-                'flex items-center gap-2 rounded-2xl border bg-widget/80 p-2 pl-4 shadow-2xl shadow-black/40 backdrop-blur transition-all duration-300',
+                'flex items-center gap-2 rounded-2xl border bg-widget/80 p-2 pl-4 shadow-xl shadow-black/10 backdrop-blur transition-all duration-300 dark:shadow-black/40',
                 error
-                  ? 'border-rose-400/40 ring-4 ring-rose-400/5'
+                  ? 'border-negative/40 ring-4 ring-negative-soft'
                   : 'border-line focus-within:border-silver/35 focus-within:ring-4 focus-within:ring-silver/[0.06]',
               )}
             >
@@ -104,7 +104,7 @@ export function Hero({
               <button
                 type="submit"
                 disabled={isLoading}
-                className="inline-flex h-11 shrink-0 items-center gap-2 rounded-xl bg-ink px-4 text-[13px] font-semibold text-[#090A0C] transition-all duration-200 hover:bg-white disabled:cursor-not-allowed disabled:opacity-70 sm:px-5"
+                className="inline-flex h-11 shrink-0 items-center gap-2 rounded-xl bg-ink px-4 text-[13px] font-semibold text-canvas transition-all duration-200 hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-70 sm:px-5"
               >
                 {isLoading ? (
                   <Loader2 size={15} className="animate-spin" />
@@ -122,7 +122,7 @@ export function Hero({
 
             <div className="min-h-6 pt-2.5 text-left">
               {error ? (
-                <p className="animate-fade-in text-xs text-rose-300/90">{error}</p>
+                <p className="animate-fade-in text-xs text-negative">{error}</p>
               ) : isLoading ? (
                 <p className="animate-fade-in flex items-center gap-1.5 text-xs text-silver/80">
                   <Loader2 size={11} className="animate-spin" />
@@ -130,8 +130,8 @@ export function Hero({
                   seconds.
                 </p>
               ) : !isDemo && !hasError && activeHandle ? (
-                <p className="animate-fade-in flex items-center gap-1.5 text-xs text-emerald-300/80">
-                  <span className="h-1 w-1 rounded-full bg-emerald-400" />
+                <p className="animate-fade-in flex items-center gap-1.5 text-xs text-positive">
+                  <span className="h-1 w-1 rounded-full bg-positive" />
                   Live profile loaded for @{activeHandle}
                 </p>
               ) : null}
@@ -143,7 +143,7 @@ export function Hero({
               <span
                 className={cn(
                   'h-1.5 w-1.5 rounded-full',
-                  isDemo ? 'bg-gold/80' : 'bg-emerald-400/80',
+                  isDemo ? 'bg-gold/80' : 'bg-positive/80',
                 )}
               />
               {isDemo ? 'Demo mode · sample statistics' : 'Live · Codeforces API'}

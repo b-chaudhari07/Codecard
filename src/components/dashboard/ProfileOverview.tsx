@@ -86,7 +86,7 @@ export function ProfileOverview({ profile }: ProfileOverviewProps) {
                 'h-1.5 w-1.5 rounded-full',
                 profile.isSample
                   ? 'animate-pulse-soft bg-gold'
-                  : 'bg-emerald-400',
+                  : 'bg-positive',
               )}
             />
             {profile.isSample ? 'Sample data' : 'Live data'}

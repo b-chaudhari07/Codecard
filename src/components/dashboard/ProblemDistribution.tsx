@@ -26,7 +26,7 @@ export function ProblemDistribution({ profile }: ProblemDistributionProps) {
       <div className="flex items-start justify-between gap-4">
         <div>
           <div className="flex items-center gap-2.5">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.06] bg-white/[0.025] text-silver">
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-line bg-soft text-silver">
               <BarChart3 size={15} strokeWidth={1.9} />
             </span>
             <h3 className="text-[15px] font-semibold tracking-[-0.01em] text-ink">
@@ -81,7 +81,7 @@ export function ProblemDistribution({ profile }: ProblemDistributionProps) {
                   <span className="w-[74px] shrink-0 text-[11px] text-muted tabular">
                     {bucket.label}
                   </span>
-                  <div className="relative h-2 flex-1 overflow-hidden rounded-full bg-white/[0.035]">
+                  <div className="relative h-2 flex-1 overflow-hidden rounded-full bg-soft-2">
                     <div
                       className={cn(
                         'h-full rounded-full transition-all duration-700 ease-out',
@@ -108,7 +108,7 @@ export function ProblemDistribution({ profile }: ProblemDistributionProps) {
             })}
           </div>
 
-          <div className="mt-7 flex items-center justify-between border-t border-white/[0.05] pt-4 text-[11px] text-muted">
+          <div className="mt-7 flex items-center justify-between border-t border-line pt-4 text-[11px] text-muted">
             <span className="inline-flex items-center gap-2">
               <span className="h-1.5 w-1.5 rounded-full bg-gold/80" />
               Strongest band

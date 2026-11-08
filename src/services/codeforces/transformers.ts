@@ -179,6 +179,29 @@ export function toLocalIsoDate(date: Date): string {
   return `${year}-${month}-${day}`
 }
 
+function isoDayNumber(date: string): number {
+  const [year, month, day] = date.split('-').map(Number)
+  return Math.floor(Date.UTC(year, month - 1, day) / 86_400_000)
+}
+
+function longestConsecutiveRun(dates: Iterable<string>): number {
+  const sorted = [...new Set(dates)]
+    .map(isoDayNumber)
+    .sort((a, b) => a - b)
+
+  let longest = 0
+  let current = 0
+  let previous: number | null = null
+
+  for (const day of sorted) {
+    current = previous !== null && day === previous + 1 ? current + 1 : 1
+    longest = Math.max(longest, current)
+    previous = day
+  }
+
+  return longest
+}
+
 interface DayCount {
   submissions: number
   accepted: number
@@ -217,6 +240,9 @@ export function buildSubmissionActivity(
 
   const days: HeatmapDay[] = []
   let maxDailySubmissions = 0
+  let windowSubmissions = 0
+  let windowAcceptedSubmissions = 0
+  let windowActiveDays = 0
 
   for (
     let cursor = start;
@@ -226,6 +252,9 @@ export function buildSubmissionActivity(
     const date = toLocalIsoDate(cursor)
     const entry = counts.get(date) ?? { submissions: 0, accepted: 0 }
     maxDailySubmissions = Math.max(maxDailySubmissions, entry.submissions)
+    windowSubmissions += entry.submissions
+    windowAcceptedSubmissions += entry.accepted
+    if (entry.submissions > 0) windowActiveDays += 1
     days.push({
       date,
       submissions: entry.submissions,
@@ -236,8 +265,12 @@ export function buildSubmissionActivity(
   return {
     days,
     activeDays: counts.size,
+    longestStreak: longestConsecutiveRun(counts.keys()),
     totalSubmissions: submissions.length,
     acceptedSubmissions,
+    windowSubmissions,
+    windowAcceptedSubmissions,
+    windowActiveDays,
     maxDailySubmissions,
     windowStart: toLocalIsoDate(start),
     windowEnd: toLocalIsoDate(end),

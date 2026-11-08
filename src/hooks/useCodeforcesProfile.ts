@@ -184,9 +184,13 @@ export function useCodeforcesProfile(): UseCodeforcesProfileResult {
           warnings,
         })
 
-        // Only cache complete profiles so a partial failure can be retried by
-        // searching the same handle again.
-        if (nextProfile.warnings.length === 0) {
+        // Cache any profile whose live datasets loaded. Truncated submission
+        // history is valid (and labelled as partial), while genuine partial
+        // failures stay uncached so searching the same handle retries them.
+        if (
+          nextProfile.ratingHistoryAvailable &&
+          nextProfile.submissionsAvailable
+        ) {
           profileCache.set(key, {
             profile: nextProfile,
             fetchedAt: Date.now(),

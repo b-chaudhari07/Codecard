@@ -1,7 +1,13 @@
 import avatarUrl from '../assets/avatar.svg'
 
 import { buildContestStats } from '../services/codeforces/transformers'
-import type { Profile, RatingPoint } from '../types/profile'
+import type {
+  HardestProblem,
+  HeatmapDay,
+  Profile,
+  RatingPoint,
+  SubmissionActivity,
+} from '../types/profile'
 
 type RawRatingPoint = [date: string, rating: number, contest: string]
 
@@ -83,6 +89,116 @@ const contestStats = buildContestStats(ratingHistory) ?? {
   recentChanges: [],
 }
 
+const hardestProblems: HardestProblem[] = [
+  {
+    key: '1610:E',
+    contestId: 1610,
+    index: 'E',
+    name: 'Amr and Points',
+    rating: 2100,
+    url: 'https://codeforces.com/problemset/problem/1610/E',
+  },
+  {
+    key: '1748:C',
+    contestId: 1748,
+    index: 'C',
+    name: 'Zero-Sum Prefixes',
+    rating: 1900,
+    url: 'https://codeforces.com/problemset/problem/1748/C',
+  },
+  {
+    key: '1661:C',
+    contestId: 1661,
+    index: 'C',
+    name: 'Water the Trees',
+    rating: 1700,
+    url: 'https://codeforces.com/problemset/problem/1661/C',
+  },
+  {
+    key: '1676:G',
+    contestId: 1676,
+    index: 'G',
+    name: 'White-Black Balanced Subtrees',
+    rating: 1500,
+    url: 'https://codeforces.com/problemset/problem/1676/G',
+  },
+  {
+    key: '1692:F',
+    contestId: 1692,
+    index: 'F',
+    name: '3SUM',
+    rating: 1300,
+    url: 'https://codeforces.com/problemset/problem/1692/F',
+  },
+]
+
+function generateSampleSubmissionActivity(): SubmissionActivity {
+  const now = new Date('2026-11-01T00:00:00')
+  const days: HeatmapDay[] = []
+  let activeDays = 0
+  let totalSubmissions = 0
+  let acceptedSubmissions = 0
+  let maxDailySubmissions = 0
+  let currentStreak = 0
+  let longestStreak = 0
+
+  const end = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const rawStart = new Date(end)
+  rawStart.setMonth(rawStart.getMonth() - 12)
+  const start = new Date(
+    rawStart.getFullYear(),
+    rawStart.getMonth(),
+    rawStart.getDate() - rawStart.getDay(),
+  )
+
+  for (
+    let cursor = new Date(start);
+    cursor.getTime() <= end.getTime();
+    cursor.setDate(cursor.getDate() + 1)
+  ) {
+    const y = cursor.getFullYear()
+    const m = String(cursor.getMonth() + 1).padStart(2, '0')
+    const d = String(cursor.getDate()).padStart(2, '0')
+    const dateStr = `${y}-${m}-${d}`
+
+    const seed =
+      (cursor.getFullYear() * 366 +
+        cursor.getMonth() * 31 +
+        cursor.getDate()) %
+      100
+    let subs = 0
+    let acc = 0
+    if (seed < 48) {
+      subs = (seed % 6) + 1
+      acc = Math.max(1, Math.min(subs, Math.floor(subs * 0.75)))
+      activeDays += 1
+      totalSubmissions += subs
+      acceptedSubmissions += acc
+      if (subs > maxDailySubmissions) maxDailySubmissions = subs
+      currentStreak += 1
+      if (currentStreak > longestStreak) longestStreak = currentStreak
+    } else {
+      currentStreak = 0
+    }
+    days.push({ date: dateStr, submissions: subs, accepted: acc })
+  }
+
+  return {
+    days,
+    activeDays,
+    longestStreak,
+    totalSubmissions,
+    acceptedSubmissions,
+    windowSubmissions: totalSubmissions,
+    windowAcceptedSubmissions: acceptedSubmissions,
+    windowActiveDays: activeDays,
+    maxDailySubmissions,
+    windowStart: days[0]?.date ?? '2025-10-26',
+    windowEnd: days[days.length - 1]?.date ?? '2026-11-01',
+    isPartial: false,
+  }
+}
+
 /**
  * DESIGN PREVIEW FIXTURE — NOT LIVE DATA.
  * Every statistic below is hard-coded sample data for demo mode only.
@@ -134,4 +250,7 @@ export const sampleProfile: Profile = {
     { tag: 'number theory', solved: 42, strength: 28 },
     { tag: 'strings', solved: 38, strength: 26 },
   ],
+  hardestProblem: hardestProblems[0],
+  hardestProblems,
+  submissionActivity: generateSampleSubmissionActivity(),
 }

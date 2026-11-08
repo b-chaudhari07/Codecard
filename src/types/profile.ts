@@ -63,10 +63,18 @@ export interface SubmissionActivity {
   days: HeatmapDay[]
   /** Distinct local calendar days with at least one submission (all history). */
   activeDays: number
+  /** Longest run of consecutive local calendar days with a submission. */
+  longestStreak: number
   /** Submissions in the retrieved history. */
   totalSubmissions: number
   /** Accepted submissions in the retrieved history. */
   acceptedSubmissions: number
+  /** Submissions inside the heatmap window. */
+  windowSubmissions: number
+  /** Accepted submissions inside the heatmap window. */
+  windowAcceptedSubmissions: number
+  /** Distinct active days inside the heatmap window. */
+  windowActiveDays: number
   /** Highest submission count on a single day inside the heatmap window. */
   maxDailySubmissions: number
   windowStart: string
@@ -131,17 +139,31 @@ export type AccentId =
   | 'gold'
   | 'emerald'
   | 'rose'
+  | 'violet'
+  | 'amber'
+  | 'cyan'
 
 export type DesignationMode = 'auto' | 'custom'
+
+export type BannerPosition = 'top' | 'center' | 'bottom'
 
 export interface CardOptions {
   theme: CardThemeId
   accent: AccentId
   /** Use the Codeforces rank colour instead of the manual accent. */
   autoRankColor: boolean
+  /** Optional user-picked accent. Takes precedence when rank colour is off. */
+  customAccent: string | null
   /** Automatically generated tagline, or the user's own designation. */
   designationMode: DesignationMode
   customDesignation: string
+  /** Optional personal quote / motto, kept separate from the designation. */
+  customQuote: string
+  showQuote: boolean
+  showBanner: boolean
+  /** Data URL for a user-uploaded banner. */
+  customBanner: string | null
+  bannerPosition: BannerPosition
   showRatingChart: boolean
   showHeatmap: boolean
   showHardestProblem: boolean

@@ -6,7 +6,7 @@ export function Footer() {
   return (
     <footer
       id="about"
-      className="mt-8 scroll-mt-24 border-t border-white/[0.05] bg-canvas/60"
+      className="mt-8 scroll-mt-24 border-t border-line bg-canvas/60"
     >
       <div className="section-shell py-12">
         <div className="flex flex-col gap-10 md:flex-row md:items-start md:justify-between">
@@ -35,6 +35,11 @@ export function Footer() {
                 <li>
                   <a href="#overview" className="text-muted transition-colors hover:text-ink">
                     Overview
+                  </a>
+                </li>
+                <li>
+                  <a href="#challenges" className="text-muted transition-colors hover:text-ink">
+                    Challenges
                   </a>
                 </li>
                 <li>
@@ -82,7 +87,7 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="mt-12 flex flex-col gap-3 border-t border-white/[0.05] pt-6 text-[11px] text-muted/60 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mt-12 flex flex-col gap-3 border-t border-line pt-6 text-[11px] text-muted/60 sm:flex-row sm:items-center sm:justify-between">
           <p>© 2026 Codecard. All rights reserved.</p>
           <p>
             Profile data via the Codeforces public API. Live results are fetched

@@ -44,7 +44,7 @@ export function ContestPerformance({ profile }: ContestPerformanceProps) {
       <div className="flex items-start justify-between gap-4">
         <div>
           <div className="flex items-center gap-2.5">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.06] bg-white/[0.025] text-silver">
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-line bg-soft text-silver">
               <Trophy size={15} strokeWidth={1.9} />
             </span>
             <h3 className="text-[15px] font-semibold tracking-[-0.01em] text-ink">
@@ -56,7 +56,7 @@ export function ContestPerformance({ profile }: ContestPerformanceProps) {
           </p>
         </div>
         {contestStats ? (
-          <span className="rounded-full border border-emerald-400/15 bg-emerald-400/[0.06] px-2 py-1 text-[10px] font-medium text-emerald-300/80">
+          <span className="rounded-full border border-positive/20 bg-positive-soft px-2 py-1 text-[10px] font-medium text-positive">
             {formatNumber(contestStats.positiveChanges)}/
             {formatNumber(contestStats.total)} positive
           </span>
@@ -83,14 +83,12 @@ export function ContestPerformance({ profile }: ContestPerformanceProps) {
             {stats.map((stat) => (
               <div
                 key={stat.label}
-                className="rounded-2xl border border-white/[0.045] bg-white/[0.018] px-3 py-3.5"
+                className="rounded-2xl border border-line bg-soft px-3 py-3.5"
               >
                 <p
                   className={cn(
                     'text-xl font-semibold tracking-[-0.03em] tabular',
-                    stat.positive === false
-                      ? 'text-rose-300/90'
-                      : 'text-ink',
+                    stat.positive === false ? 'text-negative' : 'text-ink',
                   )}
                 >
                   {stat.value}
@@ -112,7 +110,7 @@ export function ContestPerformance({ profile }: ContestPerformanceProps) {
             </div>
 
             <div className="relative mt-4 h-24">
-              <div className="absolute inset-x-0 top-1/2 h-px bg-white/[0.06]" />
+              <div className="absolute inset-x-0 top-1/2 h-px bg-line" />
               <div className="flex h-full items-stretch gap-1.5">
                 {contestStats.recentChanges.map((change, index) => {
                   const height = Math.max(
@@ -131,8 +129,8 @@ export function ContestPerformance({ profile }: ContestPerformanceProps) {
                         className={cn(
                           'absolute left-1/2 w-full max-w-4 -translate-x-1/2 rounded-[3px] transition-all duration-300 group-hover/round:opacity-100',
                           isPositive
-                            ? 'bottom-1/2 bg-emerald-400/60'
-                            : 'top-1/2 bg-rose-400/50',
+                            ? 'bottom-1/2 bg-positive/60'
+                            : 'top-1/2 bg-negative/50',
                         )}
                         style={{ height: `${height}px` }}
                       />
@@ -142,13 +140,13 @@ export function ContestPerformance({ profile }: ContestPerformanceProps) {
               </div>
             </div>
 
-            <div className="mt-2 flex flex-wrap items-center justify-between gap-2 border-t border-white/[0.05] pt-4 text-[11px] text-muted">
+            <div className="mt-2 flex flex-wrap items-center justify-between gap-2 border-t border-line pt-4 text-[11px] text-muted">
               <span className="inline-flex items-center gap-2">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400/70" />
+                <span className="h-1.5 w-1.5 rounded-full bg-positive/70" />
                 Best {formatSigned(contestStats.bestChange)}
               </span>
               <span className="inline-flex items-center gap-2">
-                <span className="h-1.5 w-1.5 rounded-full bg-rose-400/70" />
+                <span className="h-1.5 w-1.5 rounded-full bg-negative/70" />
                 Worst {formatSigned(contestStats.worstChange)}
               </span>
               <span className="tabular">
