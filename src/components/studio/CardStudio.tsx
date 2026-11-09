@@ -1,5 +1,4 @@
 import { useLayoutEffect, useRef, useState } from 'react'
-import { toPng } from 'html-to-image'
 
 import { CardCustomizer } from './CardCustomizer'
 import { ProfileCard } from './ProfileCard'
@@ -7,6 +6,7 @@ import { SectionHeading } from '../ui/SectionHeading'
 import { getTemplate } from '../../lib/cardTemplates'
 import { CARD_THEMES, DEFAULT_CARD_OPTIONS } from '../../lib/cardThemes'
 import { clearCardOptions } from '../../lib/cardOptionsStorage'
+import { renderCardBlob } from '../../services/export/renderCardBlob'
 import type { CardOptions, Profile } from '../../types/profile'
 
 interface CardStudioProps {
@@ -81,21 +81,19 @@ export function CardStudio({
     setError(null)
 
     try {
-      await document.fonts.ready
-      const dataUrl = await toPng(node, {
-        width: template.width,
-        height: template.height,
-        pixelRatio: template.pixelRatio,
-        cacheBust: true,
-        backgroundColor: CARD_THEMES[options.theme].background,
-      })
+      const blob = await renderCardBlob(
+        node,
+        template,
+        CARD_THEMES[options.theme].background,
+      )
 
       const link = document.createElement('a')
       link.download = `codecard-${options.template}-${profile.handle}.png`
-      link.href = dataUrl
+      link.href = URL.createObjectURL(blob)
       document.body.appendChild(link)
       link.click()
       link.remove()
+      URL.revokeObjectURL(link.href)
     } catch (exportError) {
       console.error('Codecard PNG export failed', exportError)
       setError('Export failed. Please try again.')
