@@ -20,8 +20,7 @@ import type { StatTile } from '../../lib/cardStats'
 import { formatNumber } from '../../lib/utils'
 import type { CardOptions, HeatmapDay, Profile } from '../../types/profile'
 import { getHeatmapLevel, handleFontSize } from './cardUtils'
-import { GlassPanel, GlassSheen } from './glass'
-import { glassSurface } from './glassSurface'
+import { GlassPanel } from './glass'
 import { RankBadge } from './RankBadge'
 
 interface PortraitCardProps {
@@ -228,71 +227,6 @@ function StatTile({
   )
 }
 
-function AbilityChip({
-  theme,
-  rankColor,
-  label,
-  value,
-  scale,
-  fontSize,
-  paddingY,
-  paddingX,
-  radius,
-}: {
-  theme: CardTheme
-  rankColor: string
-  label: string
-  value: string
-  scale: number
-  fontSize: number
-  paddingY: number
-  paddingX: number
-  radius: number
-}) {
-  return (
-    <div
-      style={{
-        ...glassSurface(theme, Math.round(radius)),
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: 12 * scale,
-        padding: `${paddingY}px ${paddingX}px`,
-        boxSizing: 'border-box',
-        minWidth: 0,
-      }}
-    >
-      <GlassSheen accent={rankColor} radius={Math.round(radius)} isDark={theme.mode === 'dark'} />
-      <span
-        style={{
-          position: 'relative',
-          zIndex: 1,
-          flexShrink: 0,
-          fontSize,
-          fontWeight: 700,
-          letterSpacing: '0.08em',
-          color: rankColor,
-        }}
-      >
-        {label}
-      </span>
-      <span
-        style={{
-          position: 'relative',
-          zIndex: 1,
-          minWidth: 0,
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-          whiteSpace: 'nowrap',
-          fontSize,
-          color: theme.text,
-        }}
-      >
-        {value}
-      </span>
-    </div>
-  )
-}
-
 /**
  * Collectible card rendered from the shared design for the portrait, story
  * and print templates, plus a dedicated wide layout for the link template.
@@ -372,21 +306,9 @@ export const PortraitCard = forwardRef<HTMLDivElement, PortraitCardProps>(
     )
     const tiles = selectStats(profile, requestedStats)
 
-    const chips: Array<{ label: string; value: string }> = []
-    if (profile.topTag) {
-      chips.push({ label: 'TYPE', value: profile.topTag.tag })
-    }
-    if (profile.bestComeback !== null) {
-      const sign = profile.bestComeback >= 0 ? '+' : ''
-      chips.push({
-        label: 'MOVE',
-        value: `Comeback ${sign}${formatNumber(profile.bestComeback)}`,
-      })
-    }
-
     const scale = template.width / BASE_WIDTH
     // Physical / wide formats need a legible lower bound for the smallest
-    // text (captions, chips, footer); screen templates scale freely.
+    // text (captions, footer); screen templates scale freely.
     const minFont = isLink || template.id === 'print' ? 22 : 0
     const px = (value: number) => value * scale
     const ft = (value: number) => Math.max(value * scale, minFont)
@@ -395,7 +317,6 @@ export const PortraitCard = forwardRef<HTMLDivElement, PortraitCardProps>(
     const spacingScale = isStory ? 1.5 : 1
     const sp = (value: number) => px(value * spacingScale)
 
-    const heroShadow2 = heroShadow
     const headerRow = (
       <>
         <span
@@ -743,7 +664,7 @@ export const PortraitCard = forwardRef<HTMLDivElement, PortraitCardProps>(
                         lineHeight: 1,
                         letterSpacing: '-0.045em',
                         color: theme.text,
-                        textShadow: heroShadow2,
+                        textShadow: heroShadow,
                       }}
                     >
                       <span style={{ color: theme.muted, fontWeight: 600 }}>
@@ -761,7 +682,7 @@ export const PortraitCard = forwardRef<HTMLDivElement, PortraitCardProps>(
                         fontWeight: 600,
                         lineHeight: 1.1,
                         color: rankColor,
-                        textShadow: heroShadow2,
+                        textShadow: heroShadow,
                       }}
                     >
                       {identityLine}
@@ -856,11 +777,11 @@ export const PortraitCard = forwardRef<HTMLDivElement, PortraitCardProps>(
                 </div>
               </div>
 
-              {/* Right column: stat tiles + ability chips */}
+              {/* Right column: stat tiles */}
               <div
                 style={{
                   flex: 1,
-                    minWidth: 0,
+                  minWidth: 0,
                   display: 'flex',
                   flexDirection: 'column',
                 }}
@@ -886,33 +807,6 @@ export const PortraitCard = forwardRef<HTMLDivElement, PortraitCardProps>(
                     />
                   ))}
                 </div>
-                {chips.length > 0 ? (
-                  <div
-                    style={{
-                      marginTop: 16,
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 12,
-                      flexWrap: 'wrap',
-                      flexShrink: 0,
-                    }}
-                  >
-                    {chips.map((chip) => (
-                      <AbilityChip
-                        key={chip.label}
-                        theme={theme}
-                        rankColor={rankColor}
-                        label={chip.label}
-                        value={chip.value}
-                        scale={0.8}
-                        fontSize={22}
-                        paddingY={10}
-                        paddingX={16}
-                        radius={21}
-                      />
-                    ))}
-                  </div>
-                ) : null}
               </div>
             </section>
 
@@ -1343,33 +1237,6 @@ export const PortraitCard = forwardRef<HTMLDivElement, PortraitCardProps>(
                   tile={tile}
                   sizes={statSizes}
                   spanAll={tiles.length === 1}
-                />
-              ))}
-            </div>
-          ) : null}
-
-          {chips.length > 0 ? (
-            <div
-              style={{
-                marginTop: sp(24),
-                display: 'flex',
-                alignItems: 'center',
-                gap: px(24),
-                flexShrink: 0,
-              }}
-            >
-              {chips.map((chip) => (
-                <AbilityChip
-                  key={chip.label}
-                  theme={theme}
-                  rankColor={rankColor}
-                  label={chip.label}
-                  value={chip.value}
-                  scale={scale}
-                  fontSize={ft(29)}
-                  paddingY={px(21)}
-                  paddingX={px(30)}
-                  radius={px(31)}
                 />
               ))}
             </div>
