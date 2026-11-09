@@ -57,6 +57,8 @@ interface CardCustomizerProps {
   shareDisabled: boolean
   canCopyImage: boolean
   shareMessage: string | null
+  shareCaption: string | null
+  onCopyShareCaption: () => void
 }
 
 interface ToggleProps {
@@ -227,6 +229,8 @@ export function CardCustomizer({
   shareDisabled,
   canCopyImage,
   shareMessage,
+  shareCaption,
+  onCopyShareCaption,
 }: CardCustomizerProps) {
   const update = (patch: Partial<CardOptions>) =>
     onChange({ ...options, ...patch })
@@ -951,10 +955,28 @@ export function CardCustomizer({
           <ShareButton disabled={shareDisabled} onClick={onPostX} icon={<ExternalLink size={11} />} label="Post on X" />
           <ShareButton disabled={shareDisabled} onClick={onPostLinkedIn} icon={<ExternalLink size={11} />} label="Post on LinkedIn" />
         </div>
+        <p className="mt-2 text-[9px] leading-relaxed text-muted/60">
+          X and LinkedIn can&apos;t attach images from a link. We copy the image so you can paste it.
+        </p>
         {shareMessage ? (
-          <p role="status" aria-live="polite" className="mt-2 text-center text-[10px] text-muted">
-            {shareMessage}
-          </p>
+          <div role="status" aria-live="polite" className="mt-2 text-center text-[10px] text-muted">
+            <p>{shareMessage}</p>
+            {shareCaption ? (
+              <div className="mt-2 rounded-lg border border-line bg-soft p-2 text-left">
+                <p className="whitespace-pre-line break-words text-[10px] text-silver">
+                  {shareCaption}
+                </p>
+                <button
+                  type="button"
+                  disabled={shareDisabled}
+                  onClick={onCopyShareCaption}
+                  className="mt-2 rounded-md border border-line bg-widget px-2 py-1 text-[9px] font-medium text-silver hover:text-ink disabled:opacity-45"
+                >
+                  Copy caption
+                </button>
+              </div>
+            ) : null}
+          </div>
         ) : null}
       </div>
     </aside>

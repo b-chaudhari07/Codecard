@@ -7,6 +7,7 @@ import { getTemplate } from '../../lib/cardTemplates'
 import { CARD_THEMES, DEFAULT_CARD_OPTIONS } from '../../lib/cardThemes'
 import { clearCardOptions } from '../../lib/cardOptionsStorage'
 import { buildCaption, getSiteUrl } from '../../lib/caption'
+import { chooseSharePath, getShareFileName } from '../../lib/shareActions'
 import { renderCardBlob } from '../../services/export/renderCardBlob'
 import type { CardOptions, Profile } from '../../types/profile'
 
@@ -39,6 +40,7 @@ export function CardStudio({
   const [scale, setScale] = useState(0.45)
   const [renderedCard, setRenderedCard] = useState<{ key: string; blob: Blob } | null>(null)
   const [shareMessage, setShareMessage] = useState<string | null>(null)
+  const [shareCaption, setShareCaption] = useState<string | null>(null)
 
   const containerRef = useRef<HTMLDivElement>(null)
   const cardRef = useRef<HTMLDivElement>(null)
@@ -162,7 +164,7 @@ export function CardStudio({
     try {
       const file = new File(
         [shareBlob],
-        `codecard-${options.template}-${profile.handle}.png`,
+        getShareFileName(profile.handle, options.template),
         { type: 'image/png' },
       )
       const siteRoot = getSiteUrl().replace(/\/+$/, '')
@@ -208,47 +210,100 @@ export function CardStudio({
   }
 
   const handleShare = () => withShareBlob(async (blob, file, url) => {
+    setShareCaption(null)
     const caption = buildCaption(profile, options, 'x', url)
     const shareApi = navigator as Navigator & {
       share?: (data: ShareData) => Promise<void>
       canShare?: (data?: ShareData) => boolean
     }
-    if (typeof shareApi.share === 'function' && shareApi.canShare?.({ files: [file] })) {
-      await shareApi.share({ files: [file], title: 'My Codecard', text: caption, url })
-      setShareMessage('Shared successfully.')
-    } else {
-      downloadBlob(blob)
+    let filesSupported = false
+    if (typeof shareApi.canShare === 'function') {
+      try {
+        filesSupported = shareApi.canShare({ files: [file] })
+      } catch {
+        filesSupported = false
+      }
+    }
+    const path = chooseSharePath(
+      typeof shareApi.share === 'function',
+      filesSupported,
+    )
+    if (path === 'share-files') {
+      console.debug('Codecard share path: share with files')
+      try {
+        await shareApi.share?.({ files: [file], title: 'My Codecard', text: caption })
+        setShareCaption(null)
+        setShareMessage('Shared image and caption')
+        return
+      } catch (error) {
+        if (
+          error !== null &&
+          typeof error === 'object' &&
+          'name' in error &&
+          error.name === 'AbortError'
+        ) return
+        console.debug('Codecard share path: download fallback after share error')
+      }
+    }
+    console.debug('Codecard share path: download fallback')
+    downloadBlob(blob)
+    try {
       await navigator.clipboard.writeText(caption)
-      setShareMessage('PNG downloaded and caption copied.')
+      console.debug('Codecard clipboard path: copied caption after download fallback')
+      setShareMessage("This browser can't share images directly. Image downloaded and caption copied. Attach the image in your post.")
+    } catch {
+      setShareMessage("This browser can't share images directly. Image downloaded. Copy the caption before posting.")
     }
   })
 
   const handleCopyImage = () => withShareBlob(async (blob) => {
     await writeImage(blob)
+    console.debug('Codecard clipboard path: copied image')
+    setShareCaption(null)
     setShareMessage('Image copied.')
   })
 
   const handleCopyCaption = () => withShareBlob(async (_blob, _file, url) => {
     await navigator.clipboard.writeText(buildCaption(profile, options, 'x', url))
+    console.debug('Codecard clipboard path: copied X caption')
+    setShareCaption(null)
     setShareMessage('Caption copied.')
   })
 
   const handlePost = (platform: 'x' | 'linkedin') => withShareBlob(async (blob, _file, url) => {
+    setShareCaption(null)
+    const linkedinCaption = platform === 'linkedin'
+      ? buildCaption(profile, options, 'linkedin', url)
+      : null
     let imageCopied = false
-    if (platform === 'linkedin') {
-      const linkedinCaption = buildCaption(profile, options, 'linkedin', url)
-      try {
-        await writeImageAndText(blob, linkedinCaption)
-        imageCopied = true
-      } catch {
-        await navigator.clipboard.writeText(linkedinCaption)
-      }
-    } else {
-      try {
-        await writeImage(blob)
-        imageCopied = true
-      } catch {
-        // Continue to the platform even if image clipboard access is blocked.
+    try {
+      await writeImage(blob)
+      imageCopied = true
+      console.debug('Codecard clipboard path: copied image before opening post')
+    } catch {
+      console.debug('Codecard share path: image clipboard failed; downloading')
+      downloadBlob(blob)
+    }
+
+    let linkedinCaptionCopied = false
+    if (linkedinCaption) {
+      if (imageCopied) {
+        try {
+          await writeImageAndText(blob, linkedinCaption)
+          linkedinCaptionCopied = true
+          console.debug('Codecard clipboard path: copied LinkedIn caption with image')
+        } catch {
+          // Preserve the successfully copied image; offer caption inline.
+          setShareCaption(linkedinCaption)
+        }
+      } else {
+        try {
+          await navigator.clipboard.writeText(linkedinCaption)
+          linkedinCaptionCopied = true
+          console.debug('Codecard clipboard path: copied LinkedIn caption after image download')
+        } catch {
+          setShareCaption(linkedinCaption)
+        }
       }
     }
     const target = platform === 'x'
@@ -256,12 +311,16 @@ export function CardStudio({
       : `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`
     window.open(target, '_blank', 'noopener,noreferrer')
     setShareMessage(imageCopied
-      ? platform === 'linkedin'
-        ? 'Image copied, paste it into your post. LinkedIn caption copied.'
-        : 'Image copied, paste it into your post.'
-      : platform === 'linkedin'
-        ? 'LinkedIn opened; caption copied. Image clipboard unavailable.'
-        : 'X opened. Image clipboard unavailable.')
+      ? `Image copied. Paste it into the post box (Cmd/Ctrl+V).${linkedinCaptionCopied ? ' LinkedIn caption copied.' : ''}`
+      : `Image downloaded. Attach it to your post.${linkedinCaptionCopied ? ' LinkedIn caption copied.' : ''}`)
+  })
+
+  const handleCopyLinkedInCaption = () => withShareBlob(async (_blob, _file, url) => {
+    const caption = shareCaption ?? buildCaption(profile, options, 'linkedin', url)
+    await navigator.clipboard.writeText(caption)
+    console.debug('Codecard clipboard path: copied LinkedIn caption')
+    setShareCaption(null)
+    setShareMessage('LinkedIn caption copied.')
   })
 
   const displayWidth = Math.round(template.width * scale)
@@ -383,6 +442,8 @@ export function CardStudio({
           shareDisabled={isExporting || profile.isSample}
           canCopyImage={supportsImageClipboard()}
           shareMessage={profile.isSample ? 'Search your own handle to share.' : shareMessage}
+          shareCaption={profile.isSample ? null : shareCaption}
+          onCopyShareCaption={handleCopyLinkedInCaption}
         />
       </div>
     </section>
