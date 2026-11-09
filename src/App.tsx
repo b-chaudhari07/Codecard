@@ -107,6 +107,7 @@ function App() {
             return next
           })
         }}
+        profile={profile}
       />
 
       <main>

@@ -321,7 +321,7 @@ export const DEFAULT_CARD_OPTIONS: CardOptions = {
   template: 'portrait',
   theme: 'obsidian',
   accent: 'emerald',
-  autoRankColor: false,
+  autoRankColor: true,
   customAccent: null,
   designationMode: 'auto',
   customDesignation: '',

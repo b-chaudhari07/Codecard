@@ -133,7 +133,8 @@ const hardestProblems: HardestProblem[] = [
 ]
 
 function generateSampleSubmissionActivity(): SubmissionActivity {
-  const now = new Date('2026-11-01T00:00:00')
+  // Relative end date so the fixture always lands inside a live 12-month window.
+  const now = new Date()
   const days: HeatmapDay[] = []
   let activeDays = 0
   let totalSubmissions = 0
@@ -143,6 +144,12 @@ function generateSampleSubmissionActivity(): SubmissionActivity {
   let longestStreak = 0
 
   const end = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const isoDate = (date: Date) =>
+    [
+      date.getFullYear(),
+      String(date.getMonth() + 1).padStart(2, '0'),
+      String(date.getDate()).padStart(2, '0'),
+    ].join('-')
   const rawStart = new Date(end)
   rawStart.setMonth(rawStart.getMonth() - 12)
   const start = new Date(
@@ -193,11 +200,23 @@ function generateSampleSubmissionActivity(): SubmissionActivity {
     windowAcceptedSubmissions: acceptedSubmissions,
     windowActiveDays: activeDays,
     maxDailySubmissions,
-    windowStart: days[0]?.date ?? '2025-10-26',
-    windowEnd: days[days.length - 1]?.date ?? '2026-11-01',
+    windowStart: days[0]?.date ?? isoDate(start),
+    windowEnd: days[days.length - 1]?.date ?? isoDate(end),
     isPartial: false,
   }
 }
+
+const sampleActivity = generateSampleSubmissionActivity()
+
+/**
+ * The busiest sample day, dated inside the activity window. Kept in sync with
+ * the generated activity so the fixture never claims a bigger day than the
+ * heatmap shows.
+ */
+const samplePeakDay = sampleActivity.days.reduce(
+  (best, day) => (day.accepted > best.accepted ? { ...day } : best),
+  { date: '', submissions: 0, accepted: 0 },
+)
 
 /**
  * DESIGN PREVIEW FIXTURE — NOT LIVE DATA.
@@ -209,8 +228,8 @@ export const sampleProfile: Profile = {
   avatarUrl,
   avatarDataUrl: null,
   initials: 'CB',
-  rank: 'Specialist',
-  maxRank: 'Expert',
+  rank: 'Expert',
+  maxRank: 'Candidate Master',
   rating: 1847,
   maxRating: 1912,
   problemsSolved: 684,
@@ -252,12 +271,16 @@ export const sampleProfile: Profile = {
   ],
   hardestProblem: hardestProblems[0],
   hardestProblems,
-  submissionActivity: generateSampleSubmissionActivity(),
-  peakDay: { count: 8, date: '2026-08-15', partial: false },
+  submissionActivity: sampleActivity,
+  peakDay: {
+    count: samplePeakDay.accepted,
+    date: samplePeakDay.date || null,
+    partial: false,
+  },
   grit: {
     count: 12,
-    problemName: 'Amr and Points',
-    problemIndex: 'E',
+    problemName: hardestProblems[0].name,
+    problemIndex: hardestProblems[0].index,
     partial: false,
   },
   contests: ratingHistory.length,

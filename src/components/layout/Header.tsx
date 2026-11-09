@@ -3,6 +3,7 @@ import { Moon, Sun } from 'lucide-react'
 
 import { CodeforcesMark } from '../ui/CodeforcesMark'
 import type { AppTheme } from '../../lib/appTheme'
+import type { Profile } from '../../types/profile'
 import { cn } from '../../lib/utils'
 
 const NAV_ITEMS = [
@@ -16,9 +17,15 @@ const NAV_ITEMS = [
 interface HeaderProps {
   theme: AppTheme
   onToggleTheme: () => void
+  /**
+   * The observed section nodes only exist for a rendered profile and are
+   * replaced on every live search, so the observer re-attaches whenever the
+   * profile object changes.
+   */
+  profile: Profile | null
 }
 
-export function Header({ theme, onToggleTheme }: HeaderProps) {
+export function Header({ theme, onToggleTheme, profile }: HeaderProps) {
   const [activeSection, setActiveSection] = useState('overview')
 
   useEffect(() => {
@@ -37,7 +44,7 @@ export function Header({ theme, onToggleTheme }: HeaderProps) {
 
     sections.forEach((section) => observer.observe(section))
     return () => observer.disconnect()
-  }, [])
+  }, [profile])
 
   const nextThemeLabel = theme === 'dark' ? 'light' : 'dark'
 

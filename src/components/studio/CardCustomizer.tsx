@@ -231,6 +231,8 @@ export function CardCustomizer({
 
   const autoTagline = generateDesignation(profile)
 
+  const isClassic = options.template === 'classic'
+
   const [bannerError, setBannerError] = useState<string | null>(null)
   const [photoError, setPhotoError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -799,19 +801,31 @@ export function CardCustomizer({
           />
           <Toggle
             label="Activity heatmap"
-            description="52-week submission calendar"
+            description={
+              isClassic
+                ? '52-week submission calendar'
+                : '18-week layer behind the graph'
+            }
             checked={options.showHeatmap}
             onChange={(checked) => update({ showHeatmap: checked })}
           />
           <Toggle
             label="Hardest challenge"
-            description="Highest-rated solved problem"
+            description={
+              isClassic
+                ? 'Highest-rated solved problem'
+                : 'Boss tile (hardest solved)'
+            }
             checked={options.showHardestProblem}
             onChange={(checked) => update({ showHardestProblem: checked })}
           />
           <Toggle
             label="Achievement stats"
-            description="Solves, active days, streak"
+            description={
+              isClassic
+                ? 'Solves, active days, streak'
+                : 'Solved, streak, peak day, grit, contests'
+            }
             checked={options.showStats}
             onChange={(checked) => update({ showStats: checked })}
           />

@@ -3,8 +3,8 @@
 **Your Codeforces, visualized.**
 
 A premium Codeforces profile analytics and card-generation interface. Explore a
-competitive programming profile, customize a 4:5 profile card, and export it as
-a high-resolution PNG.
+competitive programming profile, customize a collectible card in five template
+shapes, and export it as a high-resolution PNG.
 
 ## Stack
 
@@ -13,6 +13,7 @@ a high-resolution PNG.
 - Tailwind CSS v4 (`@tailwindcss/vite`)
 - Lucide React
 - html-to-image
+- Vitest
 
 ## Getting started
 
@@ -26,8 +27,81 @@ Open the local URL printed by Vite (default `http://localhost:5173`).
 ```bash
 npm run build   # type-check + production build
 npm run lint    # Oxlint
+npm run test    # Vitest unit tests
 npm run preview # preview the production build
 ```
+
+## Card templates
+
+All templates are available today and rendered from one scoring design; the
+portrait, story and print layouts share a single-column composition scaled by
+`template.width / 1080`, and the link template uses a dedicated two-column
+layout:
+
+| Template | Size (CSS px) | Aspect | Default export | Notes |
+|---|---|---|---|---|
+| Portrait (default) | 1080 × 1350 | 4:5 | 2160 × 2700 | The base design |
+| Story | 1080 × 1920 | 9:16 | 2160 × 3840 | 36% banner, larger section spacing |
+| Link | 1200 × 630 | 1.91:1 | 2400 × 1260 | Two columns: identity + rating left, stats right |
+| Print | 750 × 1050 | 5:7 | 3000 × 4200 | Scaled to 63 × 88 mm style; smallest text stays ≥ 22 px |
+| Classic | 1400 × 1000 | 7:5 | 2800 × 2000 | The original landscape card |
+
+## Themes
+
+- **Obsidian** — dark cinematic glass; `#07080C` background, translucent
+  surfaces, ambient glows and inset highlights.
+- **Minimal** — light frosted daylight; `#F2F4F7` background, white glass
+  surfaces and soft shadows. The heatmap's zero-activity cells use a light
+  neutral (`#E3E7EC`) while the obsidian theme keeps its dark green cells.
+
+## Accents and rank colour
+
+Eight accents are available in both themes (each with a darker variant for the
+light theme). **Rank colour is on by default**: the card, rarity pill, glows and
+foil use the official Codeforces colour for the profile's rank (also derived for
+unrated profiles via the manual accent). Turning it off restores the manual
+accent; picking an accent disables rank colouring so the choice is visible
+immediately.
+
+## Rarity and foil
+
+The header pill on the portrait-family cards shows a game-style rarity derived
+only from the real Codeforces rank — Newbie/Pupil/Specialist → COMMON, UNCOMMON,
+RARE; Expert → EPIC; Candidate Master → EPIC+; Master and International Master →
+LEGENDARY; the three Grandmaster tiers → MYTHIC. From Expert up, a subtle static
+holographic foil (diagonal white + rank-colour bands, `mix-blend-mode: screen`)
+lights the card; from Master up an inner rank-colour glow is added. No
+animations — exports stay deterministic.
+
+## Customization
+
+- **Banner** — show/hide the cinematic artwork, upload your own image (max
+  6 MB, images only) and choose the crop position.
+- **Profile photo** — upload a photo shown inside the avatar ring (max 6 MB,
+  data URL, survives PNG export) or reset to the Codeforces avatar; the initials
+  fallback stays if a load fails.
+- **Quote** — optional personal motto (90 chars).
+- **Tagline** — auto-generated rank-aware designation or your own text
+  (classic card; the portrait design never renders a tagline).
+- **Sections** — rating graph, activity heatmap, hardest challenge, achievement
+  stats, watermark.
+- **Stat tiles** — six slots from an eight-stat pool (boss, solved, streak,
+  peak day, grit, contests, active days, peak rating). Unavailable stats are
+  replaced by the next available one from the pool, so tiles never show fake
+  zeros or blanks; selecting a duplicate swaps the two slots.
+
+Card options are stored per browser in `localStorage` under a versioned schema;
+loading migrates them against the defaults, and any oversized custom images
+(> 1 MB) stay in memory only so quota errors can't break the page. "Reset"
+restores the defaults and clears the saved options.
+
+## PNG export
+
+`html-to-image` rasterizes only the isolated card node (`data-codecard-export`)
+using `toPng`, each template's default pixel ratio (see table), and the active
+theme's background colour, so even translucent surfaces export correctly. The
+filename is `codecard-{template}-{handle}.png`, and the export waits for web
+fonts and cache-busts images. Dashboard chrome is never part of the card.
 
 ## Live Codeforces data
 
@@ -35,111 +109,32 @@ Profiles are fetched directly in the browser from the official public API:
 
 - `user.info` — profile, rank, rating, registration date, contribution
 - `user.rating` — rated contest history
-- `user.status` — submissions, unique solved problems, tags and difficulty
+- `user.status` — submissions, unique solves, tags and difficulty
 
-Requests are sequential and throttled to **one every two seconds**. Profiles are
-cached in memory for five minutes and duplicate in-flight requests are ignored.
-
-Solved problems are counted once per `contestId` + problem `index` and only for
-an `OK` verdict. Problems without a difficulty rating are excluded from the
-difficulty distribution and reported separately — they are never treated as
-rating zero. Contest metrics are labelled **rated contests** and are derived from
-`user.rating`.
-
-Loading, not-found, rate-limit, network, invalid-response and empty-history
-states are handled explicitly. Failed live data is never replaced with the
-sample fixture.
-
-## Card Studio
-
-The studio renders a 4:5 profile card at its design size of **1080 × 1350** and
-scales it only for the on-screen preview. Customization is local state, so theme,
-accent and section changes update instantly without another API request.
-
-### Themes
-
-- **Obsidian** — dark glassmorphism: `#090A0C` background, `#151619` surfaces,
-  silver and muted-gold accents, ambient light and inset highlights.
-- **Minimal** — Apple-inspired light theme: `#F5F5F7` background, white surfaces,
-  lavender accents, soft shadows and generous whitespace.
-
-### Accents and rank colouring
-
-Five accents are available in both themes: **Lavender, Sapphire, Gold, Emerald
-and Rose**. Each accent has a darker `onLight` variant so it stays legible on the
-Minimal theme.
-
-Rank colouring is enabled by default and resolves the card accent from the
-profile's Codeforces rank. It is purely a rendering override: the manual accent
-stays stored in `CardOptions` and is restored the moment rank colouring is turned
-off. Clicking an accent disables rank colouring so the manual choice is visible
-immediately.
-
-### Sections
-
-Every section can be toggled independently:
-
-- rating graph
-- problem statistics (solved count and difficulty spread)
-- topic tags
-- contest statistics (rated contests and best rank)
-- membership date
-- branding watermark (header wordmark and footer tagline)
-
-The "Verified profile" label and the profile URL are always kept.
+Requests are sequential and throttled to one every two seconds; results are
+cached in memory for five minutes. Solves are counted once per
+`contestId + index` for `OK` verdicts; unrated problems are excluded from the
+difficulty distribution instead of being treated as rating zero. Loading,
+not-found, rate-limit, network, invalid-response and empty-history states are
+explicit; failed live data is never replaced with the sample fixture.
 
 ## Demo mode
 
-`src/data/sampleProfile.ts` (`@chaudharibhavesh198`) is used only as an
-explicitly labelled demo. It is shown on first load and whenever "View demo
-profile" is chosen from an error state; live searches replace it.
-
-## Structure
-
-```
-src/
-  assets/            sample avatar
-  components/
-    charts/          shared SVG rating chart
-    dashboard/       hero, metrics, analytics widgets, loading/error states
-    layout/          header and footer
-    studio/          card studio, card, customizer
-    ui/              small shared primitives
-  data/              sample profile fixture
-  hooks/             useCodeforcesProfile (cache, stages, errors)
-  lib/               card themes, formatting and chart helpers
-  services/
-    codeforces/      raw types, endpoints, throttled API client, avatar proxy, transformers
-  types/             shared TypeScript interfaces
-```
-
-## PNG export
-
-`html-to-image` exports only the isolated card node at 2× (**2160 × 2700**) so the
-downloaded PNG stays sharp. The export uses the active theme's background colour
-and the filename is `codecard-{handle}.png`. Dashboard UI and controls are never
-part of the export target.
+`src/data/sampleProfile.ts` (`@chaudharibhavesh198`, an Expert fixture with a
+Candidate-Master peak) is an explicitly labelled design preview. It is shown on
+first load and via "View demo profile" from error states; live searches replace
+it. Its activity window is generated relative to today, so the heatmap always
+looks fresh.
 
 ## Avatars
 
-`user.info` provides `titlePhoto` (preferred) with `avatar` as the fallback. The
-URL is stored on the application profile and rewritten from the canonical
-`userpic.codeforces.org` host to `codeforces.com/userpic/...`.
-
-Because neither host sends CORS headers, the image is fetched through a
-CORS-enabled image proxy (`wsrv.nl`, with `images.weserv.nl` as a second
-hostname), resized to a 400 × 400 `fit=cover` JPEG and inlined as a data URL.
-That keeps the image inside the exported PNG. The avatar fetch runs in parallel
-with the throttled API calls, successful results are cached in memory, and
-in-flight requests are de-duplicated. If the proxy fails, the direct
-`codeforces.com` URL is still used for display; initials are only rendered after
-the image itself reports a load error.
+Codeforces image hosts send no CORS headers, so the avatar is fetched through a
+resized CORS proxy (`wsrv.nl`) and inlined as a data URL; the direct URL is used
+for display if the proxy fails, and initials are rendered only after the image
+itself reports a load error.
 
 ## Known limitations
 
-- `userpic.codeforces.org` currently returns HTTP 503, and
-  `codeforces.com/userpic/...` does not send an `access-control-allow-origin`
-  header. Avatar loading therefore depends on the `wsrv.nl` proxy; if it is
-  unreachable the card falls back to the direct image and then to initials.
-- `user.status` is capped at 30,000 retrieved submissions (three pages of
-  10,000). If the cap is reached, the profile shows a truncation warning.
+- `user.status` is capped at 30,000 retrieved submissions; when the cap is hit,
+  the profile shows a truncation warning and affected captions carry a "~".
+- The default card banner ships as an SVG asset; uploads are inlined data URLs.
