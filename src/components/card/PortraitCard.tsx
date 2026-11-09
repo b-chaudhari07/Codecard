@@ -10,6 +10,7 @@ import {
   getRarity,
   hasFoil,
   hasInnerGlow,
+  mixHex,
   resolveAccent,
   resolveRankAccent,
   withAlpha,
@@ -39,7 +40,14 @@ const HEATMAP_DAYS = 126
 const HEATMAP_WEEKS = 18
 const HERO_BOX_HEIGHT = 173
 const HERO_BOX_WIDTH = 398
-const HEATMAP_OPACITY = [0.05, 0.18, 0.34, 0.55]
+/**
+ * Fill opacities per activity level: faint empty cells, scaling up so the
+ * busiest days read clearly even behind the sparkline.
+ */
+const HEATMAP_OPACITY = [0.06, 0.28, 0.5, 0.75]
+/** Extra opacity boost (applied linearly) for the four most recent weeks. */
+const RECENT_WEEKS_OPACITY_BOOST = 0.1
+const RECENT_DAYS = 28
 const GRID_TWO_ROW_HEIGHT = 452
 const GRID_ONE_ROW_HEIGHT = 214
 
@@ -54,6 +62,13 @@ function ActivityHeatmap({
   emptyColor: string
   scale: number
 }) {
+  const recentCutoff =
+    days.length > 0
+      ? new Date(
+          new Date(`${days[days.length - 1].date}T00:00:00`).getTime() -
+            (RECENT_DAYS - 1) * 24 * 60 * 60 * 1000,
+        )
+      : null
   return (
     <div
       aria-hidden="true"
@@ -69,13 +84,22 @@ function ActivityHeatmap({
     >
       {days.map((day) => {
         const level = getHeatmapLevel(day.submissions)
+        let opacity = level === 0 ? 1 : HEATMAP_OPACITY[level]
+        const backgroundColor = level === 0 ? emptyColor : color
+        if (level > 0 && recentCutoff !== null) {
+          // Recent activity pops: +10% for the four newest weeks.
+          const dayDate = new Date(`${day.date}T00:00:00`)
+          if (dayDate >= recentCutoff) {
+            opacity = Math.min(1, opacity + RECENT_WEEKS_OPACITY_BOOST)
+          }
+        }
         return (
           <div
             key={day.date}
             style={{
               borderRadius: 6 * scale,
-              backgroundColor: level === 0 ? emptyColor : color,
-              opacity: level === 0 ? 1 : HEATMAP_OPACITY[level],
+              backgroundColor,
+              opacity,
             }}
           />
         )
@@ -106,6 +130,17 @@ function StatTile({
   sizes: StatTileSizes
   spanAll?: boolean
 }) {
+  const isDark = theme.mode === 'dark'
+  // Raised-glass feel: lighter at the top, darker at the bottom, with a
+  // brighter 1 px top-edge highlight. Text colours are unchanged, so all
+  // label/value/caption pairs keep their theme contrast (AA or better).
+  const tileGradient = isDark
+    ? 'linear-gradient(180deg, rgba(255,255,255,0.07) 0%, rgba(255,255,255,0.015) 34%, rgba(0,0,0,0.16) 100%)'
+    : 'linear-gradient(180deg, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0.38) 46%, rgba(175,182,196,0.24) 100%)'
+  const tileShadow = isDark
+    ? 'inset 0 1px 0 rgba(255,255,255,0.32), 0 20px 46px rgba(0, 0, 0, 0.4)'
+    : 'inset 0 1px 0 rgba(255,255,255,0.95), 0 18px 40px rgba(23, 23, 29, 0.12)'
+
   return (
     <GlassPanel
       theme={theme}
@@ -117,6 +152,8 @@ function StatTile({
         padding: sizes.padding,
         boxSizing: 'border-box',
         minWidth: 0,
+        backgroundImage: tileGradient,
+        boxShadow: tileShadow,
       }}
     >
       <div
@@ -280,6 +317,8 @@ export const PortraitCard = forwardRef<HTMLDivElement, PortraitCardProps>(
     const rarity = getRarity(profile.rank)
     const foil = hasFoil(profile.rank)
     const innerGlow = hasInnerGlow(profile.rank)
+    // LEGENDARY / MYTHIC badges get a stronger outer halo in the rank colour.
+    const highRarity = rarity === 'LEGENDARY' || rarity === 'MYTHIC'
     const heroShadow = isDark
       ? '0 2px 18px rgba(0,0,0,0.58)'
       : '0 1px 0 rgba(255,255,255,0.72)'
@@ -319,9 +358,11 @@ export const PortraitCard = forwardRef<HTMLDivElement, PortraitCardProps>(
     const hasHeroVisual = hasHeatmap || hasChart
 
     const ratingText = formatNumber(profile.rating)
+    // Lighten the gradient end ~25% toward white so low-saturation ranks
+    // (Newbie, Pupil) still read vivid on both themes.
     const ratingGradient = `linear-gradient(180deg, ${
       isDark ? '#FFFFFF' : theme.text
-    } 0%, ${rankColor} 100%)`
+    } 0%, ${mixHex(rankColor, '#FFFFFF', 0.25)} 100%)`
 
     // The stat pool is filtered by the section toggles: `boss` follows the
     // hardest-problem toggle, everything else follows the stats toggle —
@@ -377,6 +418,8 @@ export const PortraitCard = forwardRef<HTMLDivElement, PortraitCardProps>(
           scale={scale}
           minFontSize={isLink ? 22 : minFont}
           label={rarity}
+          glowRadius={highRarity ? 30 : 18}
+          glowAlpha={highRarity ? 0.42 : 0.18}
           background="rgba(8, 10, 14, 0.55)"
         />
       </>
@@ -434,6 +477,7 @@ export const PortraitCard = forwardRef<HTMLDivElement, PortraitCardProps>(
               gridColor={theme.chartGrid}
               labelColor={theme.chartLabel}
               dotFill={theme.chartDot}
+              underStrokeColor="rgba(0, 0, 0, 0.32)"
             />
           </div>
         ) : null}
@@ -781,7 +825,7 @@ export const PortraitCard = forwardRef<HTMLDivElement, PortraitCardProps>(
                           color: isDark ? '#FFFFFF' : theme.text,
                           filter: `drop-shadow(0 0 24px ${withAlpha(
                             rankColor,
-                            isDark ? 0.35 : 0.2,
+                            isDark ? 0.42 : 0.24,
                           )})`,
                         }}
                       >
@@ -1121,7 +1165,7 @@ export const PortraitCard = forwardRef<HTMLDivElement, PortraitCardProps>(
                   boxShadow: `0 0 0 1px ${withAlpha(
                     rankColor,
                     0.35,
-                  )}, 0 0 40px ${withAlpha(
+                  )}, 0 0 46px ${withAlpha(
                     rankColor,
                     isDark ? 0.26 : 0.16,
                   )}`,
@@ -1229,7 +1273,7 @@ export const PortraitCard = forwardRef<HTMLDivElement, PortraitCardProps>(
                     color: isDark ? '#FFFFFF' : theme.text,
                     filter: `drop-shadow(0 0 30px ${withAlpha(
                       rankColor,
-                      isDark ? 0.35 : 0.2,
+                      isDark ? 0.42 : 0.24,
                     )})`,
                   }}
                 >

@@ -21,6 +21,8 @@ interface RatingLineChartProps {
   gridColor?: string
   labelColor?: string
   dotFill?: string
+  /** Optional dark halo under the line to keep it legible over bright fills. */
+  underStrokeColor?: string
 }
 
 const VIEW_WIDTH = 1000
@@ -145,6 +147,7 @@ export function RatingLineChart({
   gridColor,
   labelColor,
   dotFill,
+  underStrokeColor,
 }: RatingLineChartProps) {
   const gradientId = useId()
   const [activeIndex, setActiveIndex] = useState<number | null>(null)
@@ -230,6 +233,19 @@ export function RatingLineChart({
           : null}
 
         <path d={geometry.areaPath} fill={`url(#${gradientId}-area)`} />
+        {underStrokeColor ? (
+          // Faint dark halo that keeps the line legible over bright fills
+          // such as the activity heatmap behind the sparkline.
+          <path
+            d={geometry.linePath}
+            fill="none"
+            stroke={underStrokeColor}
+            strokeWidth={(compact ? 4 : 3) + 6}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            opacity={0.55}
+          />
+        ) : null}
         <path
           d={geometry.linePath}
           fill="none"

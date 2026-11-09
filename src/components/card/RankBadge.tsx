@@ -13,6 +13,8 @@ export function RankBadge({
   label,
   scale = 1,
   minFontSize = 0,
+  glowRadius,
+  glowAlpha,
 }: {
   rank: CodeforcesRank | null
   rankColor: string
@@ -26,6 +28,10 @@ export function RankBadge({
   scale?: number
   /** Legibility floor for the rendered text (physical/wide templates). */
   minFontSize?: number
+  /** Outer glow radius in base px (scaled); defaults to 18. */
+  glowRadius?: number
+  /** Outer glow alpha; defaults to 0.18. */
+  glowAlpha?: number
 }) {
   const isLarge = large && !compact
   const fontSize = Math.max(
@@ -36,6 +42,10 @@ export function RankBadge({
     Math.round((compact ? 10 : isLarge ? 26 : 12) * scale),
     Math.round(minFontSize * 0.85),
   )
+  const outerGlow = `0 0 ${(glowRadius ?? 18) * scale}px ${withAlpha(
+    rankColor,
+    glowAlpha ?? 0.18,
+  )}`
 
   return (
     <span
@@ -51,7 +61,7 @@ export function RankBadge({
         background:
           background ??
           `linear-gradient(135deg, ${withAlpha(rankColor, 0.24)}, ${withAlpha(accent, 0.1)})`,
-        boxShadow: `0 0 18px ${withAlpha(rankColor, 0.18)}, inset 0 1px 0 rgba(255,255,255,0.18)`,
+        boxShadow: `${outerGlow}, inset 0 1px 0 rgba(255,255,255,0.18)`,
         color: rankColor,
         fontSize,
         fontWeight: 700,
