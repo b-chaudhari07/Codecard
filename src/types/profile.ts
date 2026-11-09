@@ -1,3 +1,5 @@
+import type { TemplateId } from '../lib/cardTemplates'
+
 export type CodeforcesRank =
   | 'Newbie'
   | 'Pupil'
@@ -148,6 +150,7 @@ export type DesignationMode = 'auto' | 'custom'
 export type BannerPosition = 'top' | 'center' | 'bottom'
 
 export interface CardOptions {
+  template: TemplateId
   theme: CardThemeId
   accent: AccentId
   /** Use the Codeforces rank colour instead of the manual accent. */

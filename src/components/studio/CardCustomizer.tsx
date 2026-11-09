@@ -21,6 +21,7 @@ import {
   resolveRankAccent,
 } from '../../lib/cardThemes'
 import type { CardTheme } from '../../lib/cardThemes'
+import { TEMPLATES, TEMPLATE_IDS, getTemplate } from '../../lib/cardTemplates'
 import { generateDesignation } from '../../lib/designation'
 import { cn } from '../../lib/utils'
 import type {
@@ -205,6 +206,7 @@ export function CardCustomizer({
     onChange({ ...options, ...patch })
 
   const theme = CARD_THEMES[options.theme]
+  const activeTemplate = getTemplate(options.template)
   const resolvedAccent = resolveAccent(
     theme,
     options.accent,
@@ -276,6 +278,69 @@ export function CardCustomizer({
           <RotateCcw size={11} />
           Reset
         </button>
+      </div>
+
+      {/* Template selection */}
+      <div className="mt-5">
+        <div className="flex items-center justify-between">
+          <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-muted">
+            Template
+          </p>
+          <span className="text-[10px] text-muted/70">
+            {activeTemplate.aspect} · {activeTemplate.width} ×{' '}
+            {activeTemplate.height}
+          </span>
+        </div>
+        <div className="mt-2.5 grid grid-cols-2 gap-2">
+          {TEMPLATE_IDS.map((templateId) => {
+            const template = TEMPLATES[templateId]
+            const active = options.template === templateId
+
+            return (
+              <button
+                key={templateId}
+                type="button"
+                disabled={!template.available}
+                onClick={() => update({ template: templateId })}
+                aria-pressed={active}
+                title={template.description}
+                className={cn(
+                  'flex items-center justify-between gap-2 rounded-xl border px-2.5 py-2 text-left transition-all duration-200',
+                  active
+                    ? 'border-silver/40 bg-soft-2 ring-1 ring-silver/20'
+                    : 'border-line bg-soft',
+                  template.available
+                    ? 'hover:border-silver/20'
+                    : 'cursor-not-allowed opacity-45',
+                  templateId === 'classic' && 'col-span-2',
+                )}
+              >
+                <span className="min-w-0">
+                  <span
+                    className={cn(
+                      'block text-[11px] font-medium',
+                      active ? 'text-ink' : 'text-muted',
+                    )}
+                  >
+                    {template.label}
+                  </span>
+                  <span className="mt-0.5 block text-[9px] leading-tight text-muted/60">
+                    {template.aspect} · {template.width}×{template.height}
+                  </span>
+                </span>
+                {template.available ? (
+                  active ? (
+                    <Check size={11} className="shrink-0 text-silver" />
+                  ) : null
+                ) : (
+                  <span className="shrink-0 rounded-full border border-line px-1.5 py-0.5 text-[8px] font-semibold uppercase tracking-[0.12em] text-muted/70">
+                    Soon
+                  </span>
+                )}
+              </button>
+            )
+          })}
+        </div>
       </div>
 
       {/* Theme selection */}
@@ -668,7 +733,9 @@ export function CardCustomizer({
           </p>
         ) : (
           <p className="mt-2 text-center text-[10px] text-muted/60">
-            7:5 Landscape · 2× PNG (2800 × 2000)
+            {activeTemplate.aspect} · {activeTemplate.pixelRatio}× PNG (
+            {activeTemplate.width * activeTemplate.pixelRatio} ×{' '}
+            {activeTemplate.height * activeTemplate.pixelRatio})
           </p>
         )}
       </div>

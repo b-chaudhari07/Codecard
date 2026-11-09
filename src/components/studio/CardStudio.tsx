@@ -2,8 +2,9 @@ import { useLayoutEffect, useRef, useState } from 'react'
 import { toPng } from 'html-to-image'
 
 import { CardCustomizer } from './CardCustomizer'
-import { CARD_HEIGHT, CARD_WIDTH, ProfileCard } from './ProfileCard'
+import { ProfileCard } from './ProfileCard'
 import { SectionHeading } from '../ui/SectionHeading'
+import { getTemplate } from '../../lib/cardTemplates'
 import { CARD_THEMES, DEFAULT_CARD_OPTIONS } from '../../lib/cardThemes'
 import type { CardOptions, Profile } from '../../types/profile'
 
@@ -23,6 +24,7 @@ export function CardStudio({
 
   const options = externalOptions ?? internalOptions
   const setOptions = externalOnChange ?? setInternalOptions
+  const template = getTemplate(options.template)
 
   const [isExporting, setIsExporting] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -50,8 +52,8 @@ export function CardStudio({
       const availableWidth = Math.max(80, rect.width - padX)
       const availableHeight = Math.max(80, rect.height - padY)
 
-      const scaleByWidth = availableWidth / CARD_WIDTH
-      const scaleByHeight = availableHeight / CARD_HEIGHT
+      const scaleByWidth = availableWidth / template.width
+      const scaleByHeight = availableHeight / template.height
       const newScale = Math.min(scaleByWidth, scaleByHeight)
 
       if (newScale > 0 && Number.isFinite(newScale)) {
@@ -68,7 +70,7 @@ export function CardStudio({
       observer.disconnect()
       window.removeEventListener('resize', updateScale)
     }
-  }, [])
+  }, [template.width, template.height])
 
   const handleDownload = async () => {
     const node = cardRef.current
@@ -80,9 +82,9 @@ export function CardStudio({
     try {
       await document.fonts.ready
       const dataUrl = await toPng(node, {
-        width: CARD_WIDTH,
-        height: CARD_HEIGHT,
-        pixelRatio: 2,
+        width: template.width,
+        height: template.height,
+        pixelRatio: template.pixelRatio,
         cacheBust: true,
         backgroundColor: CARD_THEMES[options.theme].background,
       })
@@ -101,8 +103,8 @@ export function CardStudio({
     }
   }
 
-  const displayWidth = Math.round(CARD_WIDTH * scale)
-  const displayHeight = Math.round(CARD_HEIGHT * scale)
+  const displayWidth = Math.round(template.width * scale)
+  const displayHeight = Math.round(template.height * scale)
 
   return (
     <section
@@ -143,10 +145,10 @@ export function CardStudio({
             </div>
             <div className="flex items-center gap-1.5 text-[10px] text-muted/70">
               <span className="rounded-full border border-line bg-surface px-2 py-1">
-                7:5
+                {template.aspect}
               </span>
               <span className="rounded-full border border-line bg-surface px-2 py-1 tabular">
-                1400 × 1000
+                {template.width} × {template.height}
               </span>
             </div>
           </div>
@@ -156,7 +158,7 @@ export function CardStudio({
             ref={containerRef}
             className="relative mx-auto flex w-full items-center justify-center overflow-hidden rounded-[20px] border border-line bg-soft p-3 sm:p-5"
             style={{
-              aspectRatio: '7 / 5',
+              aspectRatio: template.aspect.replace(':', ' / '),
               maxHeight: 'min(72vh, 620px)',
             }}
           >
@@ -169,11 +171,11 @@ export function CardStudio({
                 flexShrink: 0,
               }}
             >
-              {/* Unscaled 1400x1000 node transformed from top-left */}
+              {/* Unscaled template node transformed from top-left */}
               <div
                 style={{
-                  width: CARD_WIDTH,
-                  height: CARD_HEIGHT,
+                  width: template.width,
+                  height: template.height,
                   transform: `scale(${scale})`,
                   transformOrigin: 'top left',
                   position: 'absolute',
@@ -193,7 +195,8 @@ export function CardStudio({
           <div className="flex items-center justify-between gap-3 px-2 pt-3 text-[10px] text-muted/60">
             <span className="inline-flex items-center gap-1.5">
               <span className="h-1 w-1 rounded-full bg-silver/50" />
-              Export target: 2800 × 2000 (2×)
+              Export target: {template.width * template.pixelRatio} ×{' '}
+              {template.height * template.pixelRatio} ({template.pixelRatio}×)
             </span>
             <span className="tabular">{Math.round(scale * 100)}% preview</span>
           </div>
