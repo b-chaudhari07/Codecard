@@ -10,10 +10,10 @@ interface ProfileCardProps {
 }
 
 /**
- * Thin template switcher. Portrait is the default and the only other template
- * available today; anything not implemented yet falls back to it. The
- * forwarded ref and `data-codecard-export` attribute live on the rendered card,
- * which keeps the PNG export target stable.
+ * Thin template switcher. Portrait (and its portrait/story/print variants)
+ * render the shared collectible design; anything not implemented yet falls
+ * back to it. The forwarded ref and `data-codecard-export` attribute live on
+ * the rendered card, which keeps the PNG export target stable.
  */
 export const ProfileCard = forwardRef<HTMLDivElement, ProfileCardProps>(
   function ProfileCard({ profile, options }, ref) {
@@ -26,6 +26,9 @@ export const ProfileCard = forwardRef<HTMLDivElement, ProfileCardProps>(
             options={options}
           />
         )
+      case 'story':
+      case 'link':
+      case 'print':
       case 'portrait':
       default:
         return (

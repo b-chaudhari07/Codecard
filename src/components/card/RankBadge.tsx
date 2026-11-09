@@ -11,6 +11,8 @@ export function RankBadge({
   large = false,
   background,
   label,
+  scale = 1,
+  minFontSize = 0,
 }: {
   rank: CodeforcesRank | null
   rankColor: string
@@ -20,20 +22,30 @@ export function RankBadge({
   background?: string
   /** Optional text override, e.g. a rarity tier. */
   label?: string
+  /** Multiplies every size so scaled templates stay proportionate. */
+  scale?: number
+  /** Legibility floor for the rendered text (physical/wide templates). */
+  minFontSize?: number
 }) {
   const isLarge = large && !compact
+  const fontSize = Math.max(
+    (compact ? 9.5 : isLarge ? 32 : 11) * scale,
+    minFontSize,
+  )
+  const iconSize = Math.max(
+    Math.round((compact ? 10 : isLarge ? 26 : 12) * scale),
+    Math.round(minFontSize * 0.85),
+  )
 
   return (
     <span
       style={{
         display: 'inline-flex',
         alignItems: 'center',
-        gap: compact ? 5 : isLarge ? 12 : 7,
-        padding: compact
-          ? '4px 10px'
-          : isLarge
-            ? '14px 28px'
-            : '6px 13px',
+        gap: (compact ? 5 : isLarge ? 12 : 7) * scale,
+        padding: `${(compact ? 4 : isLarge ? 14 : 6) * scale}px ${
+          (compact ? 10 : isLarge ? 28 : 13) * scale
+        }px`,
         borderRadius: 9999,
         border: `1px solid ${withAlpha(rankColor, 0.55)}`,
         background:
@@ -41,14 +53,14 @@ export function RankBadge({
           `linear-gradient(135deg, ${withAlpha(rankColor, 0.24)}, ${withAlpha(accent, 0.1)})`,
         boxShadow: `0 0 18px ${withAlpha(rankColor, 0.18)}, inset 0 1px 0 rgba(255,255,255,0.18)`,
         color: rankColor,
-        fontSize: compact ? 9.5 : isLarge ? 32 : 11,
+        fontSize,
         fontWeight: 700,
         letterSpacing: isLarge ? '0.02em' : '0.16em',
         textTransform: isLarge ? 'none' : 'uppercase',
         whiteSpace: 'nowrap',
       }}
     >
-      <Shield size={compact ? 10 : isLarge ? 26 : 12} strokeWidth={2.2} />
+      <Shield size={iconSize} strokeWidth={2.2} />
       {label ?? rank ?? 'Unrated'}
     </span>
   )

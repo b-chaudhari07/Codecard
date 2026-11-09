@@ -3,6 +3,7 @@ import { forwardRef } from 'react'
 import bannerUrl from '../../assets/anime-banner.svg'
 import { RatingLineChart } from '../charts/RatingLineChart'
 import { ProfileAvatar } from '../ui/ProfileAvatar'
+import { selectStats, sanitizeStats } from '../../lib/cardStats'
 import { getTemplate } from '../../lib/cardTemplates'
 import {
   CARD_THEMES,
@@ -14,6 +15,7 @@ import {
   withAlpha,
 } from '../../lib/cardThemes'
 import type { CardTheme } from '../../lib/cardThemes'
+import type { StatTile } from '../../lib/cardStats'
 import { formatNumber } from '../../lib/utils'
 import type { CardOptions, HeatmapDay, Profile } from '../../types/profile'
 import { getHeatmapLevel, handleFontSize } from './cardUtils'
@@ -26,47 +28,31 @@ interface PortraitCardProps {
   options: CardOptions
 }
 
-const CARD_RADIUS = 76
-const CARD_PADDING = 65
+/**
+ * Base design geometry: the 1080x1350 portrait. Every other template renders
+ * the same design scaled by `s = template.width / 1080`, so portrait itself
+ * stays pixel-identical (s = 1) while story / print reuse the single-column
+ * layout and the wide link template gets its own two-column arrangement.
+ */
+const BASE_WIDTH = 1080
 const HEATMAP_DAYS = 126
 const HEATMAP_WEEKS = 18
 const HERO_BOX_HEIGHT = 173
 const HERO_BOX_WIDTH = 398
-const HERO_BOX_CHART_HEIGHT = Math.round(
-  (HERO_BOX_HEIGHT * 1000) / HERO_BOX_WIDTH,
-)
 const HEATMAP_OPACITY = [0.05, 0.18, 0.34, 0.55]
 const GRID_TWO_ROW_HEIGHT = 452
 const GRID_ONE_ROW_HEIGHT = 214
-const MONTHS = [
-  'Jan',
-  'Feb',
-  'Mar',
-  'Apr',
-  'May',
-  'Jun',
-  'Jul',
-  'Aug',
-  'Sep',
-  'Oct',
-  'Nov',
-  'Dec',
-]
-
-/** Compact local date for the peak-day caption, e.g. "Aug 15". */
-function compactDate(iso: string): string {
-  const date = new Date(`${iso}T00:00:00`)
-  return `${MONTHS[date.getMonth()]} ${date.getDate()}`
-}
 
 function ActivityHeatmap({
   days,
   color,
   emptyColor,
+  scale,
 }: {
   days: HeatmapDay[]
   color: string
   emptyColor: string
+  scale: number
 }) {
   return (
     <div
@@ -78,7 +64,7 @@ function ActivityHeatmap({
         gridTemplateColumns: `repeat(${HEATMAP_WEEKS}, minmax(0, 1fr))`,
         gridTemplateRows: 'repeat(7, minmax(0, 1fr))',
         gridAutoFlow: 'column',
-        gap: 6,
+        gap: 6 * scale,
       }}
     >
       {days.map((day) => {
@@ -87,7 +73,7 @@ function ActivityHeatmap({
           <div
             key={day.date}
             style={{
-              borderRadius: 6,
+              borderRadius: 6 * scale,
               backgroundColor: level === 0 ? emptyColor : color,
               opacity: level === 0 ? 1 : HEATMAP_OPACITY[level],
             }}
@@ -98,32 +84,37 @@ function ActivityHeatmap({
   )
 }
 
+interface StatTileSizes {
+  label: number
+  value: number
+  caption: number
+  icon: number
+  padding: number
+  radius: number
+}
+
 function StatTile({
   theme,
   rankColor,
-  label,
-  icon,
-  value,
-  caption,
+  tile,
+  sizes,
   spanAll,
 }: {
   theme: CardTheme
   rankColor: string
-  label: string
-  icon: string
-  value: string
-  caption: string
-  spanAll: boolean
+  tile: StatTile
+  sizes: StatTileSizes
+  spanAll?: boolean
 }) {
   return (
     <GlassPanel
       theme={theme}
       accent={rankColor}
-      radius={37}
+      radius={Math.round(sizes.radius)}
       style={{
         gridColumn: spanAll ? '1 / -1' : undefined,
         height: '100%',
-        padding: 26,
+        padding: sizes.padding,
         boxSizing: 'border-box',
         minWidth: 0,
       }}
@@ -139,17 +130,23 @@ function StatTile({
       >
         <span
           style={{
-            fontSize: 29,
+            fontSize: sizes.label,
             fontWeight: 700,
             lineHeight: 1,
             letterSpacing: '0.01em',
             color: rankColor,
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
           }}
         >
-          {label}
+          {tile.label}
         </span>
-        <span aria-hidden="true" style={{ fontSize: 34, lineHeight: 1 }}>
-          {icon}
+        <span
+          aria-hidden="true"
+          style={{ fontSize: sizes.icon, lineHeight: 1, flexShrink: 0 }}
+        >
+          {tile.icon}
         </span>
       </div>
       <div
@@ -167,14 +164,14 @@ function StatTile({
             overflow: 'hidden',
             textOverflow: 'ellipsis',
             whiteSpace: 'nowrap',
-            fontSize: 89,
+            fontSize: sizes.value,
             fontWeight: 800,
             lineHeight: 0.9,
             letterSpacing: '-0.06em',
             color: theme.text,
           }}
         >
-          {value}
+          {tile.value}
         </span>
       </div>
       <span
@@ -183,12 +180,12 @@ function StatTile({
           overflow: 'hidden',
           textOverflow: 'ellipsis',
           whiteSpace: 'nowrap',
-          fontSize: 26,
+          fontSize: sizes.caption,
           lineHeight: 1.1,
           color: theme.muted,
         }}
       >
-        {caption}
+        {tile.caption}
       </span>
     </GlassPanel>
   )
@@ -199,35 +196,41 @@ function AbilityChip({
   rankColor,
   label,
   value,
+  scale,
+  fontSize,
+  paddingY,
+  paddingX,
+  radius,
 }: {
   theme: CardTheme
   rankColor: string
   label: string
   value: string
+  scale: number
+  fontSize: number
+  paddingY: number
+  paddingX: number
+  radius: number
 }) {
   return (
     <div
       style={{
-        ...glassSurface(theme, 31),
+        ...glassSurface(theme, Math.round(radius)),
         display: 'inline-flex',
         alignItems: 'center',
-        gap: 12,
-        padding: '21px 30px',
+        gap: 12 * scale,
+        padding: `${paddingY}px ${paddingX}px`,
         boxSizing: 'border-box',
         minWidth: 0,
       }}
     >
-      <GlassSheen
-        accent={rankColor}
-        radius={31}
-        isDark={theme.mode === 'dark'}
-      />
+      <GlassSheen accent={rankColor} radius={Math.round(radius)} isDark={theme.mode === 'dark'} />
       <span
         style={{
           position: 'relative',
           zIndex: 1,
           flexShrink: 0,
-          fontSize: 29,
+          fontSize,
           fontWeight: 700,
           letterSpacing: '0.08em',
           color: rankColor,
@@ -243,7 +246,7 @@ function AbilityChip({
           overflow: 'hidden',
           textOverflow: 'ellipsis',
           whiteSpace: 'nowrap',
-          fontSize: 29,
+          fontSize,
           color: theme.text,
         }}
       >
@@ -253,22 +256,19 @@ function AbilityChip({
   )
 }
 
-interface TileData {
-  label: string
-  icon: string
-  value: string
-  caption: string
-}
-
 /**
- * Portrait collectible: 1080x1350. All layout uses explicit inline styles so
- * html-to-image can rasterise the card without dashboard CSS leaking in.
+ * Collectible card rendered from the shared design for the portrait, story
+ * and print templates, plus a dedicated wide layout for the link template.
+ * All layout uses explicit inline styles so html-to-image can rasterise the
+ * card without dashboard CSS leaking in.
  */
 export const PortraitCard = forwardRef<HTMLDivElement, PortraitCardProps>(
   function PortraitCard({ profile, options }, ref) {
-    const template = getTemplate('portrait')
+    const template = getTemplate(options.template)
     const theme = CARD_THEMES[options.theme]
     const isDark = theme.mode === 'dark'
+    const isLink = template.id === 'link'
+    const isStory = template.id === 'story'
     const accent = resolveAccent(
       theme,
       options.accent,
@@ -306,8 +306,6 @@ export const PortraitCard = forwardRef<HTMLDivElement, PortraitCardProps>(
           : 'center center'
     const bannerSource = options.customBanner ?? bannerUrl
 
-    const handleSize =
-      profile.handle.length > 16 ? handleFontSize(profile.handle) : 69
     const identityLine = [profile.rank ?? 'Unrated', profile.country]
       .filter(Boolean)
       .join(' · ')
@@ -325,70 +323,13 @@ export const PortraitCard = forwardRef<HTMLDivElement, PortraitCardProps>(
       isDark ? '#FFFFFF' : theme.text
     } 0%, ${rankColor} 100%)`
 
-    const hardest = profile.hardestProblem
-    const peakDayDate = profile.peakDay.date
-    const peakDayHasData =
-      profile.peakDay.count > 0 && peakDayDate !== null
-
-    const tiles: TileData[] = []
-    if (options.showHardestProblem) {
-      tiles.push({
-        label: 'Boss',
-        icon: '👑',
-        value: hardest ? formatNumber(hardest.rating) : '—',
-        caption: hardest ? hardest.name : 'no rated solve',
-      })
-    }
-    if (options.showStats) {
-      tiles.push(
-        {
-          label: 'Solved',
-          icon: '✅',
-          value: profile.submissionsAvailable
-            ? formatNumber(profile.problemsSolved)
-            : '—',
-          caption: 'unique problems',
-        },
-        {
-          label: 'Streak',
-          icon: '🔥',
-          value: profile.submissionsAvailable
-            ? formatNumber(profile.submissionActivity?.longestStreak)
-            : '—',
-          caption: 'days in a row',
-        },
-        {
-          label: 'Peak day',
-          icon: '⚡',
-          value: peakDayHasData
-            ? formatNumber(profile.peakDay.count)
-            : '—',
-          caption:
-            peakDayHasData && peakDayDate
-              ? `solved on ${compactDate(peakDayDate)}${
-                  profile.peakDay.partial ? ' ~' : ''
-                }`
-              : `no peak day yet${profile.peakDay.partial ? ' ~' : ''}`,
-        },
-        {
-          label: 'Grit',
-          icon: '🧱',
-          value: profile.submissionsAvailable
-            ? formatNumber(profile.grit.count)
-            : '—',
-          caption: `wrongs, then AC${profile.grit.partial ? ' ~' : ''}`,
-        },
-        {
-          label: 'Contests',
-          icon: '🏁',
-          value:
-            profile.ratingHistoryAvailable && profile.contests > 0
-              ? formatNumber(profile.contests)
-              : '—',
-          caption: 'rated rounds',
-        },
-      )
-    }
+    // The stat pool is filtered by the section toggles: `boss` follows the
+    // hardest-problem toggle, everything else follows the stats toggle —
+    // matching the pre-registry behaviour.
+    const requestedStats = sanitizeStats(options.stats).filter((id) =>
+      id === 'boss' ? options.showHardestProblem : options.showStats,
+    )
+    const tiles = selectStats(profile, requestedStats)
 
     const chips: Array<{ label: string; value: string }> = []
     if (profile.topTag) {
@@ -402,8 +343,597 @@ export const PortraitCard = forwardRef<HTMLDivElement, PortraitCardProps>(
       })
     }
 
+    const scale = template.width / BASE_WIDTH
+    // Physical / wide formats need a legible lower bound for the smallest
+    // text (captions, chips, footer); screen templates scale freely.
+    const minFont = isLink || template.id === 'print' ? 22 : 0
+    const px = (value: number) => value * scale
+    const ft = (value: number) => Math.max(value * scale, minFont)
+    // Story banners breathe more: the banner is shorter and section spacing
+    // grows instead of stretching text.
+    const spacingScale = isStory ? 1.5 : 1
+    const sp = (value: number) => px(value * spacingScale)
+
+    const heroShadow2 = heroShadow
+    const headerRow = (
+      <>
+        <span
+          style={{
+            fontSize: isLink ? 24 : ft(36),
+            fontWeight: 600,
+            letterSpacing: '0.01em',
+            color: headerColor,
+            textShadow: headerTextShadow,
+            whiteSpace: 'nowrap',
+          }}
+        >
+          Codeforces · No. {profile.cardNumber}
+        </span>
+        <RankBadge
+          rank={profile.rank}
+          rankColor={rankColor}
+          accent={accent}
+          large={!isLink}
+          scale={scale}
+          minFontSize={isLink ? 22 : minFont}
+          label={rarity}
+          background="rgba(8, 10, 14, 0.55)"
+        />
+      </>
+    )
+
+    const heroBoxHeight = px(HERO_BOX_HEIGHT)
+    const heroBoxWidth = px(HERO_BOX_WIDTH)
+    const heroBoxChartHeight = Math.round(
+      (heroBoxHeight * 1000) / Math.max(1, heroBoxWidth),
+    )
+
+    const heroVisualBox = hasHeroVisual ? (
+      <div
+        style={{
+          position: 'relative',
+          flex: 1,
+          minWidth: 0,
+          height: isLink ? 132 : heroBoxHeight,
+        }}
+      >
+        {hasHeatmap ? (
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              zIndex: 0,
+            }}
+          >
+            <ActivityHeatmap
+              days={heatmapDays}
+              color={rankColor}
+              emptyColor={theme.heatmapEmpty}
+              scale={isLink ? scale * 0.6 : scale}
+            />
+          </div>
+        ) : null}
+        {hasChart ? (
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              zIndex: 1,
+              display: 'flex',
+              alignItems: 'center',
+            }}
+          >
+            <RatingLineChart
+              data={profile.ratingHistory.slice(-26)}
+              accent={rankColor}
+              compact
+              showAxis={false}
+              showGrid={false}
+              interactive={false}
+              height={isLink ? 118 : heroBoxChartHeight}
+              gridColor={theme.chartGrid}
+              labelColor={theme.chartLabel}
+              dotFill={theme.chartDot}
+            />
+          </div>
+        ) : null}
+      </div>
+    ) : null
+
+    const bannerLayers = (
+      <>
+        <div
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            height: isLink ? '100%' : isStory ? '36%' : '40%',
+            backgroundImage: `url("${bannerSource}")`,
+            backgroundSize: 'cover',
+            backgroundPosition: bannerPosition,
+            backgroundRepeat: 'no-repeat',
+            opacity: isDark ? 1 : 0.9,
+          }}
+        />
+        <div
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            height: isLink ? '100%' : isStory ? '36%' : '40%',
+            background: isLink
+              ? isDark
+                ? `linear-gradient(90deg, rgba(0,0,0,0.25) 0%, rgba(0,0,0,0) 28%, ${withAlpha(
+                    theme.background,
+                    0.62,
+                  )} 52%, ${theme.background} 86%)`
+                : `linear-gradient(90deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0) 28%, ${withAlpha(
+                    theme.background,
+                    0.72,
+                  )} 52%, ${theme.background} 86%)`
+              : isDark
+                ? `linear-gradient(180deg, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0) 38%, ${withAlpha(
+                    theme.background,
+                    0.4,
+                  )} 72%, ${theme.background} 100%)`
+                : `linear-gradient(180deg, rgba(255,255,255,0.16) 0%, rgba(255,255,255,0) 38%, ${withAlpha(
+                    theme.background,
+                    0.6,
+                  )} 72%, ${theme.background} 100%)`,
+          }}
+        />
+      </>
+    )
+
+    const cardRadius = isLink ? 40 : px(76)
+
+    if (isLink) {
+      // ── Wide link-preview layout: two columns, 1200x630 ──────────────
+      const statSizes: StatTileSizes = {
+        label: 22,
+        value: 44,
+        caption: 22,
+        icon: 24,
+        padding: 18,
+        radius: 20,
+      }
+      return (
+        <div
+          ref={ref}
+          data-codecard-export
+          style={{
+            width: template.width,
+            height: template.height,
+            backgroundColor: theme.background,
+            color: theme.text,
+            fontFamily:
+              "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif",
+            fontFeatureSettings: "'cv11', 'ss01'",
+            position: 'relative',
+            overflow: 'hidden',
+            borderRadius: cardRadius,
+            border: `1px solid ${withAlpha(rankColor, 0.5)}`,
+            boxShadow: `0 0 60px ${withAlpha(
+              rankColor,
+              isDark ? 0.2 : 0.14,
+            )}, inset 0 1px 0 rgba(255,255,255,0.08)`,
+          }}
+        >
+          {/* Ambient rank glow behind the banner */}
+          <div
+            aria-hidden="true"
+            style={{
+              position: 'absolute',
+              top: -120,
+              left: '30%',
+              width: 820,
+              height: 520,
+              transform: 'translateX(-50%)',
+              borderRadius: '50%',
+              background: `radial-gradient(circle, ${withAlpha(
+                rankColor,
+                isDark ? 0.28 : 0.18,
+              )}, transparent 68%)`,
+              filter: 'blur(56px)',
+              opacity: 0.9,
+            }}
+          />
+
+          {options.showBanner ? (
+            <div aria-hidden="true" style={{ position: 'absolute', inset: 0 }}>
+              {bannerLayers}
+            </div>
+          ) : null}
+
+          {foil ? (
+            <div
+              aria-hidden="true"
+              style={{
+                position: 'absolute',
+                inset: 0,
+                zIndex: 0,
+                pointerEvents: 'none',
+                background: `linear-gradient(115deg, transparent 16%, ${withAlpha(
+                  '#FFFFFF',
+                  0.24,
+                )} 32%, ${withAlpha(rankColor, 0.22)} 44%, ${withAlpha(
+                  '#FFFFFF',
+                  0.1,
+                )} 54%, transparent 66%, ${withAlpha(
+                  rankColor,
+                  0.14,
+                )} 80%, transparent 92%)`,
+                mixBlendMode: 'screen',
+                opacity: isDark ? 0.9 : 0.72,
+              }}
+            />
+          ) : null}
+          {innerGlow ? (
+            <div
+              aria-hidden="true"
+              style={{
+                position: 'absolute',
+                inset: 0,
+                zIndex: 0,
+                pointerEvents: 'none',
+                borderRadius: cardRadius,
+                boxShadow: `inset 0 0 70px ${withAlpha(
+                  rankColor,
+                  isDark ? 0.28 : 0.2,
+                )}, inset 0 0 0 2px ${withAlpha(rankColor, 0.4)}`,
+              }}
+            />
+          ) : null}
+
+          <div
+            style={{
+              position: 'relative',
+              zIndex: 1,
+              display: 'flex',
+              flexDirection: 'column',
+              height: '100%',
+              padding: 44,
+              boxSizing: 'border-box',
+            }}
+          >
+            <header
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 20,
+                flexShrink: 0,
+              }}
+            >
+              {headerRow}
+            </header>
+
+            <section
+              style={{
+                marginTop: 26,
+                display: 'flex',
+                gap: 34,
+                flex: 1,
+                minHeight: 0,
+              }}
+            >
+              {/* Left column: identity and rating hero */}
+              <div
+                style={{
+                  flex: '0 0 54%',
+                  minWidth: 0,
+                  display: 'flex',
+                  flexDirection: 'column',
+                }}
+              >
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 26,
+                    flexShrink: 0,
+                  }}
+                >
+                  <div style={{ position: 'relative', flexShrink: 0 }}>
+                    <div
+                      aria-hidden="true"
+                      style={{
+                        position: 'absolute',
+                        inset: -12,
+                        borderRadius: '50%',
+                        background: `radial-gradient(circle, ${withAlpha(
+                          rankColor,
+                          isDark ? 0.28 : 0.18,
+                        )}, transparent 68%)`,
+                        filter: 'blur(16px)',
+                      }}
+                    />
+                    <div
+                      style={{
+                        position: 'relative',
+                        padding: 4,
+                        borderRadius: '50%',
+                        background: `linear-gradient(145deg, ${withAlpha(
+                          rankColor,
+                          0.95,
+                        )}, ${withAlpha(accent, 0.55)} 52%, ${withAlpha(
+                          rankColor,
+                          0.3,
+                        )})`,
+                        boxShadow: `0 0 0 1px ${withAlpha(
+                          rankColor,
+                          0.35,
+                        )}, 0 0 30px ${withAlpha(rankColor, isDark ? 0.26 : 0.16)}`,
+                      }}
+                    >
+                      <ProfileAvatar
+                        src={
+                          options.customPhoto ??
+                          profile.avatarDataUrl ??
+                          profile.avatarUrl
+                        }
+                        initials={profile.initials}
+                        size={108}
+                        accent={rankColor}
+                        border="none"
+                        background={
+                          isDark
+                            ? 'radial-gradient(circle at 30% 22%, rgba(95,208,160,0.2), transparent 62%), linear-gradient(145deg, #24272D, #0D0E11)'
+                            : 'linear-gradient(145deg, #FFFFFF, #F0F0F4)'
+                        }
+                        color={isDark ? '#EEF1F6' : '#17171D'}
+                      />
+                    </div>
+                  </div>
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <h2
+                      style={{
+                        margin: 0,
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                        fontSize: 48,
+                        fontWeight: 800,
+                        lineHeight: 1,
+                        letterSpacing: '-0.045em',
+                        color: theme.text,
+                        textShadow: heroShadow2,
+                      }}
+                    >
+                      <span style={{ color: theme.muted, fontWeight: 600 }}>
+                        @
+                      </span>
+                      {profile.handle}
+                    </h2>
+                    <p
+                      style={{
+                        margin: '8px 0 0',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                        fontSize: 22,
+                        fontWeight: 600,
+                        lineHeight: 1.1,
+                        color: rankColor,
+                        textShadow: heroShadow2,
+                      }}
+                    >
+                      {identityLine}
+                    </p>
+                  </div>
+                </div>
+
+                {showQuote ? (
+                  <p
+                    style={{
+                      margin: '14px 0 0',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                      fontSize: 22,
+                      fontStyle: 'italic',
+                      lineHeight: 1.2,
+                      color: theme.muted,
+                      flexShrink: 0,
+                    }}
+                  >
+                    &ldquo;{quote}&rdquo;
+                  </p>
+                ) : null}
+
+                {/* Rating hero with sparkline; heatmap sits behind it */}
+                <div
+                  style={{
+                    marginTop: 'auto',
+                    display: 'flex',
+                    alignItems: 'flex-end',
+                    gap: 26,
+                  }}
+                >
+                  <div style={{ flexShrink: 0, minWidth: 0 }}>
+                    <p
+                      style={{
+                        margin: 0,
+                        fontSize: 22,
+                        lineHeight: 1,
+                        letterSpacing: '0.02em',
+                        color: theme.muted,
+                      }}
+                    >
+                      Current rating
+                    </p>
+                    <div style={{ position: 'relative', marginTop: 4 }}>
+                      {/* Solid fallback if background-clip:text unsupported. */}
+                      <span
+                        aria-hidden="true"
+                        className="tabular"
+                        style={{
+                          position: 'absolute',
+                          inset: 0,
+                          overflow: 'hidden',
+                          whiteSpace: 'nowrap',
+                          fontSize: 108,
+                          fontWeight: 800,
+                          lineHeight: 0.82,
+                          letterSpacing: '-0.07em',
+                          color: isDark ? '#FFFFFF' : theme.text,
+                          filter: `drop-shadow(0 0 24px ${withAlpha(
+                            rankColor,
+                            isDark ? 0.35 : 0.2,
+                          )})`,
+                        }}
+                      >
+                        {ratingText}
+                      </span>
+                      <span
+                        className="tabular"
+                        style={{
+                          position: 'relative',
+                          display: 'block',
+                          overflow: 'hidden',
+                          whiteSpace: 'nowrap',
+                          fontSize: 108,
+                          fontWeight: 800,
+                          lineHeight: 0.82,
+                          letterSpacing: '-0.07em',
+                          color: 'transparent',
+                          backgroundImage: ratingGradient,
+                          WebkitBackgroundClip: 'text',
+                          backgroundClip: 'text',
+                        }}
+                      >
+                        {ratingText}
+                      </span>
+                    </div>
+                  </div>
+                  {heroVisualBox}
+                </div>
+              </div>
+
+              {/* Right column: stat tiles + ability chips */}
+              <div
+                style={{
+                  flex: 1,
+                    minWidth: 0,
+                  display: 'flex',
+                  flexDirection: 'column',
+                }}
+              >
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+                    gridTemplateRows: 'repeat(3, minmax(0, 1fr))',
+                    gap: 16,
+                    flex: 1,
+                    minHeight: 0,
+                  }}
+                >
+                  {tiles.map((tile) => (
+                    <StatTile
+                      key={tile.id}
+                      theme={theme}
+                      rankColor={rankColor}
+                      tile={tile}
+                      sizes={statSizes}
+                      spanAll={tiles.length === 1}
+                    />
+                  ))}
+                </div>
+                {chips.length > 0 ? (
+                  <div
+                    style={{
+                      marginTop: 16,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 12,
+                      flexWrap: 'wrap',
+                      flexShrink: 0,
+                    }}
+                  >
+                    {chips.map((chip) => (
+                      <AbilityChip
+                        key={chip.label}
+                        theme={theme}
+                        rankColor={rankColor}
+                        label={chip.label}
+                        value={chip.value}
+                        scale={0.8}
+                        fontSize={22}
+                        paddingY={10}
+                        paddingX={16}
+                        radius={21}
+                      />
+                    ))}
+                  </div>
+                ) : null}
+              </div>
+            </section>
+
+            <footer
+              style={{
+                marginTop: 24,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 20,
+                flexShrink: 0,
+              }}
+            >
+              <span
+                style={{
+                  minWidth: 0,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                  fontSize: 22,
+                  lineHeight: 1.2,
+                  color: theme.muted,
+                }}
+              >
+                codeforces.com/profile/
+                <span style={{ color: theme.text, fontWeight: 600 }}>
+                  {profile.handle}
+                </span>
+              </span>
+              {options.showWatermark ? (
+                <span
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    flexShrink: 0,
+                    fontSize: 22,
+                    fontWeight: 700,
+                    lineHeight: 1.2,
+                    letterSpacing: '0.08em',
+                    color: rankColor,
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  <span aria-hidden="true">✦</span>
+                  Codecard
+                </span>
+              ) : null}
+            </footer>
+          </div>
+        </div>
+      )
+    }
+
+    // ── Columnar layout shared by portrait / story / print ───────────
+    const statSizes: StatTileSizes = {
+      label: ft(29),
+      value: ft(89),
+      caption: ft(26),
+      icon: ft(34),
+      padding: px(26),
+      radius: px(37),
+    }
     const gridHeight =
-      tiles.length === 1 ? GRID_ONE_ROW_HEIGHT : GRID_TWO_ROW_HEIGHT
+      tiles.length === 1 ? px(GRID_ONE_ROW_HEIGHT) : px(GRID_TWO_ROW_HEIGHT)
 
     return (
       <div
@@ -419,7 +949,7 @@ export const PortraitCard = forwardRef<HTMLDivElement, PortraitCardProps>(
           fontFeatureSettings: "'cv11', 'ss01'",
           position: 'relative',
           overflow: 'hidden',
-          borderRadius: CARD_RADIUS,
+          borderRadius: cardRadius,
           border: `1px solid ${withAlpha(rankColor, 0.5)}`,
           boxShadow: `0 0 90px ${withAlpha(
             rankColor,
@@ -432,10 +962,10 @@ export const PortraitCard = forwardRef<HTMLDivElement, PortraitCardProps>(
           aria-hidden="true"
           style={{
             position: 'absolute',
-            top: -180,
+            top: px(-180),
             left: '50%',
-            width: 920,
-            height: 520,
+            width: px(920),
+            height: px(520),
             transform: 'translateX(-50%)',
             borderRadius: '50%',
             background: `radial-gradient(circle, ${withAlpha(
@@ -449,38 +979,7 @@ export const PortraitCard = forwardRef<HTMLDivElement, PortraitCardProps>(
 
         {options.showBanner ? (
           <div aria-hidden="true" style={{ position: 'absolute', inset: 0 }}>
-            <div
-              style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                height: '40%',
-                backgroundImage: `url("${bannerSource}")`,
-                backgroundSize: 'cover',
-                backgroundPosition: bannerPosition,
-                backgroundRepeat: 'no-repeat',
-                opacity: isDark ? 1 : 0.9,
-              }}
-            />
-            <div
-              style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                height: '40%',
-                background: isDark
-                  ? `linear-gradient(180deg, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0) 38%, ${withAlpha(
-                      theme.background,
-                      0.4,
-                    )} 72%, ${theme.background} 100%)`
-                  : `linear-gradient(180deg, rgba(255,255,255,0.16) 0%, rgba(255,255,255,0) 38%, ${withAlpha(
-                      theme.background,
-                      0.6,
-                    )} 72%, ${theme.background} 100%)`,
-              }}
-            />
+            {bannerLayers}
           </div>
         ) : null}
 
@@ -489,10 +988,10 @@ export const PortraitCard = forwardRef<HTMLDivElement, PortraitCardProps>(
           aria-hidden="true"
           style={{
             position: 'absolute',
-            bottom: -260,
-            right: -180,
-            width: 760,
-            height: 760,
+            bottom: px(-260),
+            right: px(-180),
+            width: px(760),
+            height: px(760),
             borderRadius: '50%',
             background: `radial-gradient(circle, ${withAlpha(
               rankColor,
@@ -505,10 +1004,10 @@ export const PortraitCard = forwardRef<HTMLDivElement, PortraitCardProps>(
           aria-hidden="true"
           style={{
             position: 'absolute',
-            bottom: -220,
-            left: -200,
-            width: 620,
-            height: 620,
+            bottom: px(-220),
+            left: px(-200),
+            width: px(620),
+            height: px(620),
             borderRadius: '50%',
             background: `radial-gradient(circle, ${withAlpha(
               accent,
@@ -550,7 +1049,7 @@ export const PortraitCard = forwardRef<HTMLDivElement, PortraitCardProps>(
               inset: 0,
               zIndex: 0,
               pointerEvents: 'none',
-              borderRadius: CARD_RADIUS,
+              borderRadius: cardRadius,
               boxShadow: `inset 0 0 90px ${withAlpha(
                 rankColor,
                 isDark ? 0.28 : 0.2,
@@ -566,7 +1065,7 @@ export const PortraitCard = forwardRef<HTMLDivElement, PortraitCardProps>(
             display: 'flex',
             flexDirection: 'column',
             height: '100%',
-            padding: CARD_PADDING,
+            padding: px(65),
             boxSizing: 'border-box',
           }}
         >
@@ -575,30 +1074,11 @@ export const PortraitCard = forwardRef<HTMLDivElement, PortraitCardProps>(
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              gap: 24,
+              gap: px(24),
               flexShrink: 0,
             }}
           >
-            <span
-              style={{
-                fontSize: 36,
-                fontWeight: 600,
-                letterSpacing: '0.01em',
-                color: headerColor,
-                textShadow: headerTextShadow,
-                whiteSpace: 'nowrap',
-              }}
-            >
-              Codeforces · No. {profile.cardNumber}
-            </span>
-            <RankBadge
-              rank={profile.rank}
-              rankColor={rankColor}
-              accent={accent}
-              large
-              label={rarity}
-              background="rgba(8, 10, 14, 0.55)"
-            />
+            {headerRow}
           </header>
 
           {/* Flexible spacer keeps the banner area open */}
@@ -608,7 +1088,7 @@ export const PortraitCard = forwardRef<HTMLDivElement, PortraitCardProps>(
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: 38,
+              gap: px(38),
               flexShrink: 0,
             }}
           >
@@ -617,7 +1097,7 @@ export const PortraitCard = forwardRef<HTMLDivElement, PortraitCardProps>(
                 aria-hidden="true"
                 style={{
                   position: 'absolute',
-                  inset: -16,
+                  inset: px(-16),
                   borderRadius: '50%',
                   background: `radial-gradient(circle, ${withAlpha(
                     rankColor,
@@ -629,7 +1109,7 @@ export const PortraitCard = forwardRef<HTMLDivElement, PortraitCardProps>(
               <div
                 style={{
                   position: 'relative',
-                  padding: 5,
+                  padding: px(5),
                   borderRadius: '50%',
                   background: `linear-gradient(145deg, ${withAlpha(
                     rankColor,
@@ -654,7 +1134,7 @@ export const PortraitCard = forwardRef<HTMLDivElement, PortraitCardProps>(
                     profile.avatarUrl
                   }
                   initials={profile.initials}
-                  size={184}
+                  size={px(184)}
                   accent={rankColor}
                   border="none"
                   background={
@@ -674,7 +1154,10 @@ export const PortraitCard = forwardRef<HTMLDivElement, PortraitCardProps>(
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
                   whiteSpace: 'nowrap',
-                  fontSize: handleSize,
+                  fontSize:
+                    profile.handle.length > 16
+                      ? ft(handleFontSize(profile.handle))
+                      : ft(69),
                   fontWeight: 800,
                   lineHeight: 1,
                   letterSpacing: '-0.045em',
@@ -682,18 +1165,16 @@ export const PortraitCard = forwardRef<HTMLDivElement, PortraitCardProps>(
                   textShadow: heroShadow,
                 }}
               >
-                <span style={{ color: theme.muted, fontWeight: 600 }}>
-                  @
-                </span>
+                <span style={{ color: theme.muted, fontWeight: 600 }}>@</span>
                 {profile.handle}
               </h2>
               <p
                 style={{
-                  margin: '10px 0 0',
+                  margin: `${px(10)}px 0 0`,
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
                   whiteSpace: 'nowrap',
-                  fontSize: 38,
+                  fontSize: ft(38),
                   fontWeight: 600,
                   lineHeight: 1.1,
                   color: rankColor,
@@ -707,23 +1188,23 @@ export const PortraitCard = forwardRef<HTMLDivElement, PortraitCardProps>(
 
           <section
             style={{
-              marginTop: 32,
+              marginTop: sp(32),
               display: 'flex',
               alignItems: 'flex-end',
-              gap: hasHeroVisual ? 32 : 0,
+              gap: hasHeroVisual ? px(32) : 0,
               flexShrink: 0,
             }}
           >
             <div
               style={{
-                flex: hasHeroVisual ? '0 0 520px' : 1,
+                flex: hasHeroVisual ? `0 0 ${px(520)}px` : 1,
                 minWidth: 0,
               }}
             >
               <p
                 style={{
                   margin: 0,
-                  fontSize: 32,
+                  fontSize: ft(32),
                   lineHeight: 1,
                   letterSpacing: '0.02em',
                   color: theme.muted,
@@ -731,7 +1212,7 @@ export const PortraitCard = forwardRef<HTMLDivElement, PortraitCardProps>(
               >
                 Current rating
               </p>
-              <div style={{ position: 'relative', marginTop: 6 }}>
+              <div style={{ position: 'relative', marginTop: px(6) }}>
                 {/* Solid fallback if background-clip:text is unsupported. */}
                 <span
                   aria-hidden="true"
@@ -741,7 +1222,7 @@ export const PortraitCard = forwardRef<HTMLDivElement, PortraitCardProps>(
                     inset: 0,
                     overflow: 'hidden',
                     whiteSpace: 'nowrap',
-                    fontSize: 205,
+                    fontSize: ft(205),
                     fontWeight: 800,
                     lineHeight: 0.82,
                     letterSpacing: '-0.07em',
@@ -761,7 +1242,7 @@ export const PortraitCard = forwardRef<HTMLDivElement, PortraitCardProps>(
                     display: 'block',
                     overflow: 'hidden',
                     whiteSpace: 'nowrap',
-                    fontSize: 205,
+                    fontSize: ft(205),
                     fontWeight: 800,
                     lineHeight: 0.82,
                     letterSpacing: '-0.07em',
@@ -776,57 +1257,17 @@ export const PortraitCard = forwardRef<HTMLDivElement, PortraitCardProps>(
               </div>
             </div>
 
-            {hasHeroVisual ? (
-              <div
-                style={{
-                  position: 'relative',
-                  flex: 1,
-                  minWidth: 0,
-                  height: HERO_BOX_HEIGHT,
-                }}
-              >
-                {hasHeatmap ? (
-                  <ActivityHeatmap
-                    days={heatmapDays}
-                    color={rankColor}
-                    emptyColor={theme.heatmapEmpty}
-                  />
-                ) : null}
-                {hasChart ? (
-                  <div
-                    style={{
-                      position: 'absolute',
-                      inset: 0,
-                      display: 'flex',
-                      alignItems: 'center',
-                    }}
-                  >
-                    <RatingLineChart
-                      data={profile.ratingHistory.slice(-26)}
-                      accent={rankColor}
-                      compact
-                      showAxis={false}
-                      showGrid={false}
-                      interactive={false}
-                      height={HERO_BOX_CHART_HEIGHT}
-                      gridColor={theme.chartGrid}
-                      labelColor={theme.chartLabel}
-                      dotFill={theme.chartDot}
-                    />
-                  </div>
-                ) : null}
-              </div>
-            ) : null}
+            {heroVisualBox}
           </section>
 
           {showQuote ? (
             <p
               style={{
-                margin: '24px 0 0',
+                margin: `${sp(24)}px 0 0`,
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
                 whiteSpace: 'nowrap',
-                fontSize: 30,
+                fontSize: ft(30),
                 fontStyle: 'italic',
                 lineHeight: 1.2,
                 color: theme.muted,
@@ -840,25 +1281,23 @@ export const PortraitCard = forwardRef<HTMLDivElement, PortraitCardProps>(
           {tiles.length > 0 ? (
             <div
               style={{
-                marginTop: 24,
+                marginTop: sp(24),
                 display: 'grid',
                 gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
                 gridTemplateRows:
-                  tiles.length === 1 ? '1fr' : '1fr 1fr',
-                gap: 24,
+                  tiles.length === 1 ? '1fr' : tiles.length <= 3 ? '1fr' : '1fr 1fr',
+                gap: px(24),
                 height: gridHeight,
                 flexShrink: 0,
               }}
             >
               {tiles.map((tile) => (
                 <StatTile
-                  key={tile.label}
+                  key={tile.id}
                   theme={theme}
                   rankColor={rankColor}
-                  label={tile.label}
-                  icon={tile.icon}
-                  value={tile.value}
-                  caption={tile.caption}
+                  tile={tile}
+                  sizes={statSizes}
                   spanAll={tiles.length === 1}
                 />
               ))}
@@ -868,10 +1307,10 @@ export const PortraitCard = forwardRef<HTMLDivElement, PortraitCardProps>(
           {chips.length > 0 ? (
             <div
               style={{
-                marginTop: 24,
+                marginTop: sp(24),
                 display: 'flex',
                 alignItems: 'center',
-                gap: 24,
+                gap: px(24),
                 flexShrink: 0,
               }}
             >
@@ -882,6 +1321,11 @@ export const PortraitCard = forwardRef<HTMLDivElement, PortraitCardProps>(
                   rankColor={rankColor}
                   label={chip.label}
                   value={chip.value}
+                  scale={scale}
+                  fontSize={ft(29)}
+                  paddingY={px(21)}
+                  paddingX={px(30)}
+                  radius={px(31)}
                 />
               ))}
             </div>
@@ -889,11 +1333,11 @@ export const PortraitCard = forwardRef<HTMLDivElement, PortraitCardProps>(
 
           <footer
             style={{
-              marginTop: 36,
+              marginTop: sp(36),
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              gap: 24,
+              gap: px(24),
               flexShrink: 0,
             }}
           >
@@ -903,7 +1347,7 @@ export const PortraitCard = forwardRef<HTMLDivElement, PortraitCardProps>(
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
                 whiteSpace: 'nowrap',
-                fontSize: 30,
+                fontSize: ft(30),
                 lineHeight: 1.2,
                 color: theme.muted,
               }}
@@ -918,9 +1362,9 @@ export const PortraitCard = forwardRef<HTMLDivElement, PortraitCardProps>(
                 style={{
                   display: 'inline-flex',
                   alignItems: 'center',
-                  gap: 10,
+                  gap: px(10),
                   flexShrink: 0,
-                  fontSize: 30,
+                  fontSize: ft(30),
                   fontWeight: 700,
                   lineHeight: 1.2,
                   letterSpacing: '0.08em',

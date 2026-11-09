@@ -39,7 +39,7 @@ export const TEMPLATES: Record<TemplateId, CardTemplate> = {
     height: 1920,
     aspect: '9:16',
     pixelRatio: 2,
-    available: false,
+    available: true,
     description: 'Full-screen story',
   },
   link: {
@@ -49,7 +49,7 @@ export const TEMPLATES: Record<TemplateId, CardTemplate> = {
     height: 630,
     aspect: '1.91:1',
     pixelRatio: 2,
-    available: false,
+    available: true,
     description: 'Social link preview',
   },
   print: {
@@ -59,7 +59,7 @@ export const TEMPLATES: Record<TemplateId, CardTemplate> = {
     height: 1050,
     aspect: '5:7',
     pixelRatio: 4,
-    available: false,
+    available: true,
     description: 'High-resolution print',
   },
   classic: {
