@@ -220,11 +220,15 @@ export function CardCustomizer({
     normalizeHex(options.customAccent) ??
     resolveAccent(theme, options.accent, false, null)
   const bannerPreview = options.customBanner ?? bannerUrl
+  const photoPreview =
+    options.customPhoto ?? profile.avatarDataUrl ?? profile.avatarUrl
 
   const autoTagline = generateDesignation(profile)
 
   const [bannerError, setBannerError] = useState<string | null>(null)
+  const [photoError, setPhotoError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const photoInputRef = useRef<HTMLInputElement>(null)
 
   const updateTheme = (themeId: CardOptions['theme']) => {
     // Keep the user's accent across themes; the theme previews still advertise
@@ -232,27 +236,49 @@ export function CardCustomizer({
     update({ theme: themeId })
   }
 
-  const handleBannerUpload = (file: File | undefined) => {
+  const readImageFile = (
+    file: File | undefined,
+    onDone: (dataUrl: string) => void,
+    onError: (message: string) => void,
+  ) => {
     if (!file) return
-    setBannerError(null)
-
     if (!file.type.startsWith('image/')) {
-      setBannerError('Please choose an image file.')
+      onError('Please choose an image file.')
       return
     }
     if (file.size > 6 * 1024 * 1024) {
-      setBannerError('Banner must be smaller than 6 MB.')
+      onError('Image must be smaller than 6 MB.')
       return
     }
 
     const reader = new FileReader()
     reader.onload = () => {
       if (typeof reader.result === 'string') {
-        update({ customBanner: reader.result, showBanner: true })
+        onDone(reader.result)
+      } else {
+        onError('Could not read that image.')
       }
     }
-    reader.onerror = () => setBannerError('Could not read that image.')
-    reader.readAsDataURL(file)
+    reader.onerror = () => onError('Could not read that image.')
+    try {
+      reader.readAsDataURL(file)
+    } catch {
+      onError('Could not read that image.')
+    }
+  }
+
+  const handleBannerUpload = (file: File | undefined) => {
+    setBannerError(null)
+    readImageFile(
+      file,
+      (dataUrl) => update({ customBanner: dataUrl, showBanner: true }),
+      setBannerError,
+    )
+  }
+
+  const handlePhotoUpload = (file: File | undefined) => {
+    setPhotoError(null)
+    readImageFile(file, (dataUrl) => update({ customPhoto: dataUrl }), setPhotoError)
   }
 
   const bannerPositions: Array<{ id: BannerPosition; label: string }> = [
@@ -584,6 +610,73 @@ export function CardCustomizer({
         ) : null}
       </div>
 
+      {/* Profile photo */}
+      <div className="mt-4 border-t border-line pt-3.5">
+        <div className="flex items-center justify-between">
+          <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-muted">
+            Profile photo
+          </p>
+          <span className="text-[10px] text-muted/70">
+            {options.customPhoto ? 'Custom photo' : 'Codeforces avatar'}
+          </span>
+        </div>
+        <div className="mt-2 flex items-center gap-2.5">
+          {photoPreview ? (
+            <span className="h-11 w-11 shrink-0 overflow-hidden rounded-full border border-line">
+              <img
+                src={photoPreview}
+                alt=""
+                draggable={false}
+                className="h-full w-full object-cover"
+              />
+            </span>
+          ) : null}
+          <div className="flex min-w-0 flex-1 items-center gap-2">
+            <button
+              type="button"
+              onClick={() => photoInputRef.current?.click()}
+              className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-line bg-soft px-2.5 py-1.5 text-[10px] font-medium text-silver transition-colors hover:border-silver/30 hover:text-ink"
+            >
+              <ImagePlus size={11} />
+              Upload photo
+            </button>
+            {options.customPhoto ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setPhotoError(null)
+                  update({ customPhoto: null })
+                }}
+                title="Reset to Codeforces avatar"
+                className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-line bg-soft px-2.5 py-1.5 text-[10px] text-muted transition-colors hover:text-ink"
+              >
+                <RotateCcw size={11} />
+                Reset
+              </button>
+            ) : null}
+          </div>
+        </div>
+        <input
+          ref={photoInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={(event) => {
+            handlePhotoUpload(event.target.files?.[0])
+            event.target.value = ''
+          }}
+        />
+        {photoError ? (
+          <p className="mt-1.5 text-[9px] text-negative">{photoError}</p>
+        ) : (
+          <p className="mt-1.5 text-[9px] leading-relaxed text-muted/60">
+            {options.customPhoto
+              ? 'Tap Reset to go back to your Codeforces avatar.'
+              : 'Replaces the avatar ring on portrait & classic cards.'}
+          </p>
+        )}
+      </div>
+
       {/* Personal quote */}
       <div className="mt-4 border-t border-line pt-3.5">
         <Toggle
@@ -671,6 +764,19 @@ export function CardCustomizer({
             </p>
           </div>
         )}
+
+        <div className="mt-1 border-t border-line/60 pt-1">
+          <Toggle
+            label="Show tagline"
+            description={
+              options.template === 'classic'
+                ? 'Tagline under the handle'
+                : 'Classic card only'
+            }
+            checked={options.showDesignation}
+            onChange={(checked) => update({ showDesignation: checked })}
+          />
+        </div>
       </div>
 
       {/* Card sections toggles */}

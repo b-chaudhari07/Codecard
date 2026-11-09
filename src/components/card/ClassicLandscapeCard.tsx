@@ -389,7 +389,11 @@ export const ClassicLandscapeCard = forwardRef<
                   }}
                 >
                   <ProfileAvatar
-                    src={profile.avatarDataUrl ?? profile.avatarUrl}
+                    src={
+                      options.customPhoto ??
+                      profile.avatarDataUrl ??
+                      profile.avatarUrl
+                    }
                     initials={profile.initials}
                     size={156}
                     accent={rankColor}
@@ -461,22 +465,24 @@ export const ClassicLandscapeCard = forwardRef<
                 {profile.handle}
               </h2>
 
-              <p
-                style={{
-                  marginTop: 8,
-                  maxWidth: 560,
-                  fontSize: 16,
-                  fontStyle: 'italic',
-                  lineHeight: 1.3,
-                  color: theme.muted,
-                  textShadow: heroShadow,
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                }}
-              >
-                &ldquo;{designation}&rdquo;
-              </p>
+              {options.showDesignation ? (
+                <p
+                  style={{
+                    marginTop: 8,
+                    maxWidth: 560,
+                    fontSize: 16,
+                    fontStyle: 'italic',
+                    lineHeight: 1.3,
+                    color: theme.muted,
+                    textShadow: heroShadow,
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                  }}
+                >
+                  &ldquo;{designation}&rdquo;
+                </p>
+              ) : null}
 
               <p
                 style={{
