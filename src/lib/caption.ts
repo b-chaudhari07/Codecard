@@ -40,12 +40,13 @@ export function buildCaption(
   const rating = profile.rating === null
     ? 'unrated'
     : new Intl.NumberFormat('en-US').format(profile.rating)
-  const intro = `${rank}, ${rating} 🃏 @${profile.handle}`
+  const handle = profile.handle.replace(/^@+/, '').trim()
+  const intro = `${handle} · ${rank} ${rating} on Codeforces 🃏`
   const highlights = getHighlights(profile, options)
-  const ending = `Make my Codecard: ${url}`
+  const ending = `Make yours: ${url}`
 
   if (platform === 'linkedin') {
-    const lines = [intro]
+    const lines = [`${intro} — my Codeforces journey.`]
     if (highlights.length) lines.push(highlights.join(' · '))
     lines.push(ending)
     return lines.join('\n')
@@ -53,12 +54,16 @@ export function buildCaption(
 
   for (let count = highlights.length; count >= 0; count--) {
     const middle = highlights.slice(0, count).join(' · ')
-    const caption = [intro, middle, ending].filter(Boolean).join(' ')
+    const caption = [intro, middle, ending].filter(Boolean).join('\n')
     if (caption.length - url.length + X_URL_LENGTH <= 280) return caption
   }
   // Keep the never-truncated URL and trim the intro only if unusually long
   // rank/handle values alone exceed the platform limit.
-  const fixedEnding = ` ${ending}`
-  const allowedIntroLength = Math.max(0, 280 - X_URL_LENGTH - fixedEnding.length)
+  const fixedEnding = `\n${ending}`
+  const endingCountWithoutUrl = fixedEnding.length - url.length
+  const allowedIntroLength = Math.max(
+    0,
+    280 - X_URL_LENGTH - endingCountWithoutUrl,
+  )
   return `${intro.slice(0, allowedIntroLength)}${fixedEnding}`
 }

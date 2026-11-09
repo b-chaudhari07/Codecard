@@ -16,15 +16,20 @@ function options(stats: CardOptions['stats']): CardOptions {
 }
 
 describe('buildCaption', () => {
-  it('keeps X captions within 280 characters using the 23-character URL rule', () => {
+  it('uses three X lines, plain handle text, and counts the URL as 23', () => {
     const caption = buildCaption(
-      profile({ handle: 'VeryLongHandle'.repeat(12), rank: 'International Grandmaster' }),
+      profile({ handle: '@@VeryLongHandleVeryLongHandle', rank: 'International Grandmaster' }),
       options(['boss', 'streak', 'sniper', 'solved', 'grit', 'contests']),
       'x',
       url,
     )
     expect(caption.length - url.length + 23).toBeLessThanOrEqual(280)
     expect(caption).toContain(url)
+    expect(caption).not.toContain('@')
+    expect(caption).toContain('VeryLongHandleVeryLongHandle · International Grandmaster')
+    expect(caption).toContain(' on Codeforces 🃏\n')
+    expect(caption).toContain('\nMake yours: ')
+    expect(caption.split('\n')).toHaveLength(3)
   })
 
   it('skips unavailable selected stats and uses preferred available stats', () => {
@@ -54,6 +59,25 @@ describe('buildCaption', () => {
       url,
     )
     expect(caption.match(/👑|🔥|🎯|✅/g)).toHaveLength(1)
+    expect(caption.split('\n')).toHaveLength(3)
+  })
+
+  it('omits the highlights line when none of the preferred selected stats are available', () => {
+    const caption = buildCaption(
+      profile({
+        hardestProblem: null,
+        sniper: null,
+        submissionActivity: null,
+        submissionsAvailable: false,
+        problemsSolved: null,
+      }),
+      options(['boss', 'sniper', 'streak', 'solved', 'grit', 'contests']),
+      'x',
+      url,
+    )
+    expect(caption.split('\n')).toHaveLength(2)
+    expect(caption).not.toMatch(/👑|🔥|🎯|✅/)
+    expect(caption).toContain(`\nMake yours: ${url}`)
   })
 
   it('handles no rated contests without inventing a contest highlight', () => {
@@ -77,6 +101,9 @@ describe('buildCaption', () => {
     const lines = caption.split('\n')
     expect(lines.length).toBeGreaterThanOrEqual(2)
     expect(lines.length).toBeLessThanOrEqual(3)
-    expect(lines.at(-1)).toBe(`Make my Codecard: ${url}`)
+    expect(lines.at(-1)).toBe(`Make yours: ${url}`)
+    expect(lines[0]).toContain('— my Codeforces journey.')
+    expect(caption).not.toContain('@')
+    expect(caption).not.toContain('#')
   })
 })
