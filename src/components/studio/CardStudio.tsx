@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState } from 'react'
+import { useCallback, useLayoutEffect, useRef, useState } from 'react'
 
 import { CardCustomizer } from './CardCustomizer'
 import { ProfileCard } from './ProfileCard'
@@ -6,8 +6,15 @@ import { SectionHeading } from '../ui/SectionHeading'
 import { getTemplate } from '../../lib/cardTemplates'
 import { CARD_THEMES, DEFAULT_CARD_OPTIONS } from '../../lib/cardThemes'
 import { clearCardOptions } from '../../lib/cardOptionsStorage'
+import { buildCaption, getSiteUrl } from '../../lib/caption'
 import { renderCardBlob } from '../../services/export/renderCardBlob'
 import type { CardOptions, Profile } from '../../types/profile'
+
+function supportsImageClipboard(): boolean {
+  const clipboard = navigator.clipboard as unknown as { write?: unknown }
+  const globals = globalThis as typeof globalThis & { ClipboardItem?: unknown }
+  return typeof clipboard.write === 'function' && typeof globals.ClipboardItem === 'function'
+}
 
 interface CardStudioProps {
   profile: Profile
@@ -30,9 +37,44 @@ export function CardStudio({
   const [isExporting, setIsExporting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [scale, setScale] = useState(0.45)
+  const [renderedCard, setRenderedCard] = useState<{ key: string; blob: Blob } | null>(null)
+  const [shareMessage, setShareMessage] = useState<string | null>(null)
 
   const containerRef = useRef<HTMLDivElement>(null)
   const cardRef = useRef<HTMLDivElement>(null)
+  const renderVersion = useRef(0)
+  const pendingShare = useRef(false)
+  const renderKey = JSON.stringify([profile, options])
+  const shareBlob = renderedCard?.key === renderKey ? renderedCard.blob : null
+
+  useLayoutEffect(() => {
+    const version = ++renderVersion.current
+    const timer = window.setTimeout(() => {
+      const node = cardRef.current
+      if (!node) return
+      void renderCardBlob(
+        node,
+        template,
+        CARD_THEMES[options.theme].background,
+      ).then((blob) => {
+        if (renderVersion.current === version) {
+          setRenderedCard({ key: renderKey, blob })
+          if (pendingShare.current) {
+            pendingShare.current = false
+            setShareMessage('Image ready. Tap Share again.')
+          }
+        }
+      }).catch(() => {
+        if (renderVersion.current === version) {
+          setShareMessage('Could not prepare the image. Try again.')
+        }
+      })
+    }, 1000)
+    return () => {
+      window.clearTimeout(timer)
+      renderVersion.current += 1
+    }
+  }, [profile, options, template, renderKey])
 
   useLayoutEffect(() => {
     const element = containerRef.current
@@ -58,7 +100,7 @@ export function CardStudio({
       const newScale = Math.min(scaleByWidth, scaleByHeight)
 
       if (newScale > 0 && Number.isFinite(newScale)) {
-        setScale(newScale)
+        window.requestAnimationFrame(() => setScale(newScale))
       }
     }
 
@@ -93,7 +135,7 @@ export function CardStudio({
       document.body.appendChild(link)
       link.click()
       link.remove()
-      URL.revokeObjectURL(link.href)
+      window.setTimeout(() => URL.revokeObjectURL(link.href), 1000)
     } catch (exportError) {
       console.error('Codecard PNG export failed', exportError)
       setError('Export failed. Please try again.')
@@ -101,6 +143,124 @@ export function CardStudio({
       setIsExporting(false)
     }
   }
+
+  const withShareBlob = useCallback(async (
+    action: (blob: Blob, file: File, url: string) => Promise<void>,
+  ) => {
+    if (isExporting) return
+    if (profile.isSample) {
+      setShareMessage('Search your own handle to share.')
+      return
+    }
+    if (!shareBlob) {
+      pendingShare.current = true
+      setShareMessage('Preparing image...')
+      return
+    }
+    setIsExporting(true)
+    setShareMessage(null)
+    try {
+      const file = new File(
+        [shareBlob],
+        `codecard-${options.template}-${profile.handle}.png`,
+        { type: 'image/png' },
+      )
+      await action(shareBlob, file, getSiteUrl())
+    } catch {
+      setShareMessage('Could not complete that action. Please try again.')
+    } finally {
+      setIsExporting(false)
+    }
+  }, [isExporting, options.template, profile.handle, profile.isSample, shareBlob])
+
+  const writeImage = async (blob: Blob) => {
+    if (!supportsImageClipboard()) {
+      throw new Error('Image clipboard is unavailable')
+    }
+    await navigator.clipboard.write([
+      new ClipboardItem({ 'image/png': blob }),
+    ])
+  }
+
+  const writeImageAndText = async (blob: Blob, text: string) => {
+    if (!supportsImageClipboard()) {
+      throw new Error('Image clipboard is unavailable')
+    }
+    await navigator.clipboard.write([
+      new ClipboardItem({
+        'image/png': blob,
+        'text/plain': new Blob([text], { type: 'text/plain' }),
+      }),
+    ])
+  }
+
+  const downloadBlob = (blob: Blob) => {
+    const href = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.download = `codecard-${options.template}-${profile.handle}.png`
+    link.href = href
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    window.setTimeout(() => URL.revokeObjectURL(href), 1000)
+  }
+
+  const handleShare = () => withShareBlob(async (blob, file, url) => {
+    const caption = buildCaption(profile, options, 'x', url)
+    const shareApi = navigator as Navigator & {
+      share?: (data: ShareData) => Promise<void>
+      canShare?: (data?: ShareData) => boolean
+    }
+    if (typeof shareApi.share === 'function' && shareApi.canShare?.({ files: [file] })) {
+      await shareApi.share({ files: [file], title: 'My Codecard', text: caption, url })
+      setShareMessage('Shared successfully.')
+    } else {
+      downloadBlob(blob)
+      await navigator.clipboard.writeText(caption)
+      setShareMessage('PNG downloaded and caption copied.')
+    }
+  })
+
+  const handleCopyImage = () => withShareBlob(async (blob) => {
+    await writeImage(blob)
+    setShareMessage('Image copied.')
+  })
+
+  const handleCopyCaption = () => withShareBlob(async (_blob, _file, url) => {
+    await navigator.clipboard.writeText(buildCaption(profile, options, 'x', url))
+    setShareMessage('Caption copied.')
+  })
+
+  const handlePost = (platform: 'x' | 'linkedin') => withShareBlob(async (blob, _file, url) => {
+    let imageCopied = false
+    if (platform === 'linkedin') {
+      const linkedinCaption = buildCaption(profile, options, 'linkedin', url)
+      try {
+        await writeImageAndText(blob, linkedinCaption)
+        imageCopied = true
+      } catch {
+        await navigator.clipboard.writeText(linkedinCaption)
+      }
+    } else {
+      try {
+        await writeImage(blob)
+        imageCopied = true
+      } catch {
+        // Continue to the platform even if image clipboard access is blocked.
+      }
+    }
+    const target = platform === 'x'
+      ? `https://x.com/intent/post?text=${encodeURIComponent(buildCaption(profile, options, 'x', url))}&url=${encodeURIComponent(url)}`
+      : `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`
+    window.open(target, '_blank', 'noopener,noreferrer')
+    setShareMessage(imageCopied
+      ? platform === 'linkedin'
+        ? 'Image copied, paste it into your post. LinkedIn caption copied.'
+        : 'Image copied, paste it into your post.'
+      : platform === 'linkedin'
+        ? 'LinkedIn opened; caption copied. Image clipboard unavailable.'
+        : 'X opened. Image clipboard unavailable.')
+  })
 
   const displayWidth = Math.round(template.width * scale)
   const displayHeight = Math.round(template.height * scale)
@@ -213,6 +373,14 @@ export function CardStudio({
           onDownload={handleDownload}
           isExporting={isExporting}
           error={error}
+          onShare={handleShare}
+          onCopyImage={handleCopyImage}
+          onCopyCaption={handleCopyCaption}
+          onPostX={() => handlePost('x')}
+          onPostLinkedIn={() => handlePost('linkedin')}
+          shareDisabled={isExporting || profile.isSample}
+          canCopyImage={supportsImageClipboard()}
+          shareMessage={profile.isSample ? 'Search your own handle to share.' : shareMessage}
         />
       </div>
     </section>

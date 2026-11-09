@@ -8,6 +8,10 @@ import {
   RotateCcw,
   Sparkles,
   Trash2,
+  Share2,
+  Copy,
+  ClipboardCopy,
+  ExternalLink,
 } from 'lucide-react'
 
 import bannerUrl from '../../assets/anime-banner.svg'
@@ -45,6 +49,14 @@ interface CardCustomizerProps {
   onDownload: () => void
   isExporting: boolean
   error: string | null
+  onShare: () => void
+  onCopyImage: () => void
+  onCopyCaption: () => void
+  onPostX: () => void
+  onPostLinkedIn: () => void
+  shareDisabled: boolean
+  canCopyImage: boolean
+  shareMessage: string | null
 }
 
 interface ToggleProps {
@@ -207,6 +219,14 @@ export function CardCustomizer({
   onDownload,
   isExporting,
   error,
+  onShare,
+  onCopyImage,
+  onCopyCaption,
+  onPostX,
+  onPostLinkedIn,
+  shareDisabled,
+  canCopyImage,
+  shareMessage,
 }: CardCustomizerProps) {
   const update = (patch: Partial<CardOptions>) =>
     onChange({ ...options, ...patch })
@@ -916,6 +936,51 @@ export function CardCustomizer({
           </p>
         )}
       </div>
+
+      {/* Sharing */}
+      <div className="mt-4 border-t border-line pt-3.5">
+        <p className="mb-2 text-[10px] font-medium uppercase tracking-[0.18em] text-muted">
+          Share
+        </p>
+        <div className="flex flex-wrap gap-1.5">
+          <ShareButton disabled={shareDisabled} onClick={onShare} icon={<Share2 size={11} />} label="Share" />
+          {canCopyImage ? (
+            <ShareButton disabled={shareDisabled} onClick={onCopyImage} icon={<ClipboardCopy size={11} />} label="Copy image" />
+          ) : null}
+          <ShareButton disabled={shareDisabled} onClick={onCopyCaption} icon={<Copy size={11} />} label="Copy caption" />
+          <ShareButton disabled={shareDisabled} onClick={onPostX} icon={<ExternalLink size={11} />} label="Post on X" />
+          <ShareButton disabled={shareDisabled} onClick={onPostLinkedIn} icon={<ExternalLink size={11} />} label="Post on LinkedIn" />
+        </div>
+        {shareMessage ? (
+          <p role="status" aria-live="polite" className="mt-2 text-center text-[10px] text-muted">
+            {shareMessage}
+          </p>
+        ) : null}
+      </div>
     </aside>
+  )
+}
+
+function ShareButton({
+  disabled,
+  onClick,
+  icon,
+  label,
+}: {
+  disabled: boolean
+  onClick: () => void
+  icon: React.ReactNode
+  label: string
+}) {
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={onClick}
+      className="inline-flex items-center justify-center gap-1 rounded-lg border border-line bg-soft px-2 py-1.5 text-[10px] font-medium text-silver transition-colors hover:border-silver/30 hover:bg-soft-2 hover:text-ink disabled:cursor-not-allowed disabled:opacity-45"
+    >
+      {icon}
+      {label}
+    </button>
   )
 }
