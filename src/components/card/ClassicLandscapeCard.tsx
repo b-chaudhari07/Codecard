@@ -346,7 +346,7 @@ export const ClassicLandscapeCard = forwardRef<
                   letterSpacing: '0.02em',
                 }}
               >
-                {profile.isSample ? 'Design preview' : 'Verified profile'}
+                {profile.isSample ? 'Design preview' : 'Live data'}
               </p>
             </div>
           </header>

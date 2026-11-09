@@ -10,6 +10,7 @@ import {
   ProfileWarnings,
 } from './components/dashboard/ProfileStates'
 import { Footer } from './components/layout/Footer'
+import { AppErrorBoundary } from './components/ui/AppErrorBoundary'
 import { Header } from './components/layout/Header'
 import { CardStudio } from './components/studio/CardStudio'
 import { useCodeforcesProfile } from './hooks/useCodeforcesProfile'
@@ -196,11 +197,13 @@ function App() {
                 cardOptions={cardOptions}
                 appTheme={theme}
               />
-              <CardStudio
-                profile={profile}
-                options={cardOptions}
-                onOptionsChange={setCardOptions}
-              />
+              <AppErrorBoundary message="The card studio hit a snag. Your profile dashboard is still available.">
+                <CardStudio
+                  profile={profile}
+                  options={cardOptions}
+                  onOptionsChange={setCardOptions}
+                />
+              </AppErrorBoundary>
             </>
           ) : null}
         </div>

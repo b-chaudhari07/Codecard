@@ -1,6 +1,6 @@
-# Codecard — Current State (branch `card-2.0`, HEAD `a040d95`)
+# Codecard — Current State (branch `card-2.0`)
 
-Status verified from code only; build/lint/31 tests pass at HEAD. No pending changes.
+Status verified from code only; current test suite has 49 tests. Build, lint, and tests are run for the current change.
 
 ## 1. Card templates (`src/lib/cardTemplates.ts`, rendered via `ProfileCard.tsx`)
 | id | size (CSS px) | aspect | pixelRatio | available | rendered by |
@@ -24,11 +24,13 @@ Ambient rank glow → banner (optional `showBanner`, `customBanner`, `bannerPosi
 - Personal quote: toggle + 90-char input.
 - Tagline Designation: Auto/Custom buttons; Auto shows generated tagline; Custom input (48 chars); "Show tagline" toggle (`showDesignation`, description "Classic card only" when portrait active).
 - Card sections: toggles for rating graph, heatmap, hardest challenge, achievement stats, watermark.
-- Stat tiles: 6 select slots over the 8-stat pool with `swapStat` duplicate handling.
-- Download button + export-size caption (`template.width × pixelRatio`).
+- Stat tiles: 6 select slots over the stat pool with `swapStat` duplicate handling.
+- Download button + export-size caption (`template.width × pixelRatio`), plus Share, Copy image/caption, Post on X, and Post on LinkedIn actions.
 
-## 4. Export
+## 4. Export and sharing
 - Current: only PNG via `html-to-image`'s `toPng` inside `CardStudio.tsx` (`handleDownload`); `document.fonts.ready`, `cacheBust: true`, theme background colour; error message "Export failed. Please try again."
+- PNG is pre-rendered after card/options settle and cached for share actions. Native sharing sends the PNG and caption where supported; other actions copy/download the image or caption and open platform share links.
+- Public profile URLs use `/u/{handle}`; opening one loads that live profile, and browser back/forward follows the path.
 - Default pixel sizes: portrait 2160×2700, story 2160×3840, link 2400×1260, print 3000×4200 (750×1050 ×4), classic 2800×2000.
 - Filename: `codecard-{template}-{handle}.png` (template id, handle, not the "-front" pattern).
 - JPEG/WebP: do NOT exist. No scale options (1x–4x) in the UI. No export service module, no Export section in CardCustomizer, no 4000px/16MP warning or cap.
@@ -57,7 +59,14 @@ Ambient rank glow → banner (optional `showBanner`, `customBanner`, `bannerPosi
 - PARTIAL: CardStudio reset behavior already does memory defaults and clears saved custom options, but has no dedicated "Reset card" labelled control outside the Reset button; export has defaults per template but no scale choices.
 - MISSING: export service extraction (`cards/export/`) and options, JPEG/WebP modes, 1x–4x scales, 4000px/16 MP warning and cap, Export section, "-front" filename scheme, card back, front/back toggle, print sheet.
 
-## 8. Known rough edges
+## 8. Privacy, deployment, and app resilience
+- No accounts, tracking or analytics, and no profile data stored on Codecard servers. Profile data is fetched directly from Codeforces in-browser.
+- Avatars are fetched through wsrv.nl to embed in PNGs. Card settings and small uploaded images are stored in browser localStorage; uploads over 1 MB stay memory-only. Codecard is not affiliated with Codeforces.
+- Error boundaries wrap the app and card studio separately, with friendly reload fallbacks and console error logging.
+- `VITE_SITE_URL` sets the public origin for metadata and share links; unset metadata uses `https://your-domain` and runtime share links use the current origin. `VITE_GITHUB_URL` optionally sets the footer repository link; unset hides it. `.env.example` documents both.
+- Deploy with `npm run build`, publish `dist`, and add `public/og.png` at 1200×630. `vercel.json` and `public/_redirects` provide SPA fallbacks. Social previews are generic until per-user previews exist; index title/description and favicon are present.
+
+## 9. Known rough edges
 - Template grid's "Soon" badge is currently unreachable: every template is `available: true`.
 - `rankAccent()` (lib/utils.ts) trusts every `CodeforcesRank` key; unknown input would crash (but all callers pass profile.rank, always valid).
 - The link template hard-codes its hero visual at 132 px with the heatmap at 0.6× scale; spacing is manual, unlike the single-column layouts.
@@ -65,7 +74,7 @@ Ambient rank glow → banner (optional `showBanner`, `customBanner`, `bannerPosi
 - Classic card predates the portrait registry: no `stats` selection, no rarity pill, no foil, though it does use `theme.heatmapEmpty` and the custom photo/tagline toggle.
 - The default banner is an SVG asset imported via Vite (`anime-banner.svg`), so exports rasterize an SVG; custom banners are data URLs and bypass it. Exports wait for `document.fonts.ready` before capture.
 
-## 9. Tests `npm test` (31 passing)
+## 10. Tests
 - `services/codeforces/transformers.test.ts` (13): peak day distinct counting/dedup/day assignment, grit counting/labels, difficulty buckets, helper edge cases.
 - `lib/cardStats.test.ts` (12): selection/captions/partial "~" suffix, substitution of unavailable stats, all-unavailable placeholder, unique ids mandate, `swapStat` replace/swap/no-op, `sanitizeStats` repair + default fill.
 - `lib/cardOptionsStorage.test.ts` (6): migration of missing fields, stats repair, nonsense payloads, round-trip persistence, invalid stored JSON, oversized data URL exclusion, quota failure fallback, clear.

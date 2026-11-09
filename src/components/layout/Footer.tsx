@@ -1,8 +1,29 @@
-import { ArrowUpRight, Code2 } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { ArrowUpRight, Code2, X } from 'lucide-react'
 
 import { CodeforcesMark } from '../ui/CodeforcesMark'
 
 export function Footer() {
+  const [privacyOpen, setPrivacyOpen] = useState(false)
+  const privacyTrigger = useRef<HTMLButtonElement>(null)
+  const privacyClose = useRef<HTMLButtonElement>(null)
+
+  useEffect(() => {
+    if (!privacyOpen) return
+    const trigger = privacyTrigger.current
+    privacyClose.current?.focus()
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setPrivacyOpen(false)
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => {
+      window.removeEventListener('keydown', onKeyDown)
+      trigger?.focus()
+    }
+  }, [privacyOpen])
+
+  const githubUrl = import.meta.env.VITE_GITHUB_URL?.trim()
+
   return (
     <footer
       id="about"
@@ -68,19 +89,29 @@ export function Footer() {
                     <ArrowUpRight size={12} />
                   </a>
                 </li>
+                {githubUrl ? (
+                  <li>
+                    <a
+                      href={githubUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1 text-muted transition-colors hover:text-ink"
+                    >
+                      <Code2 size={13} />
+                      GitHub
+                    </a>
+                  </li>
+                ) : null}
                 <li>
-                  <a
-                    href="https://github.com"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex items-center gap-1 text-muted transition-colors hover:text-ink"
+                  <button
+                    ref={privacyTrigger}
+                    type="button"
+                    onClick={() => setPrivacyOpen(true)}
+                    aria-haspopup="dialog"
+                    className="text-muted transition-colors hover:text-ink"
                   >
-                    <Code2 size={13} />
-                    GitHub
-                  </a>
-                </li>
-                <li>
-                  <span className="text-muted/50">Privacy</span>
+                    Privacy
+                  </button>
                 </li>
               </ul>
             </div>
@@ -96,6 +127,46 @@ export function Footer() {
           </p>
         </div>
       </div>
+      {privacyOpen ? (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) setPrivacyOpen(false)
+          }}
+        >
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="privacy-title"
+            className="w-full max-w-lg rounded-2xl border border-line bg-widget p-5 text-ink shadow-2xl sm:p-6"
+          >
+            <header className="flex items-start justify-between gap-4">
+              <div>
+                <p className="eyebrow">Codecard</p>
+                <h2 id="privacy-title" className="mt-1 text-lg font-semibold">
+                  Privacy
+                </h2>
+              </div>
+              <button
+                ref={privacyClose}
+                type="button"
+                onClick={() => setPrivacyOpen(false)}
+                aria-label="Close privacy information"
+                className="rounded-lg border border-line bg-soft p-2 text-muted transition-colors hover:text-ink"
+              >
+                <X size={16} />
+              </button>
+            </header>
+            <ul className="mt-4 list-disc space-y-2 pl-5 text-sm leading-relaxed text-muted">
+              <li>No accounts, tracking or analytics, and no data stored on our servers.</li>
+              <li>Profile data is fetched directly from the public Codeforces API in your browser.</li>
+              <li>Your avatar is fetched through the third-party wsrv.nl image proxy so it can be included in the downloaded image.</li>
+              <li>Card settings and small uploaded photos or banners are saved in this browser&apos;s local storage only. Large uploads stay in memory and are not saved.</li>
+              <li>Codecard is not affiliated with or endorsed by Codeforces.</li>
+            </ul>
+          </section>
+        </div>
+      ) : null}
     </footer>
   )
 }

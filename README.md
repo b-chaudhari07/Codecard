@@ -27,10 +27,13 @@ Open the local URL printed by Vite (default `http://localhost:5173`).
 ## Deploy
 
 Set `VITE_SITE_URL` to the public site origin (for example,
-`https://codecard.example.com`) before building. Add `public/og.png` at 1200×630
-for social link previews; preview images are generic until per-user previews
-exist. Build with `npm run build` and deploy the `dist` output directory. If
-`VITE_SITE_URL` is unset, metadata uses the placeholder `https://your-domain`.
+`https://codecard.example.com`) before building. `VITE_GITHUB_URL` optionally
+sets the footer repository link; when unset, that link is hidden. Add
+`public/og.png` at 1200×630 for social link previews; preview images are generic
+until per-user previews exist. Build with `npm run build` and deploy the `dist`
+output directory. The project includes Vercel and Netlify SPA rewrites. If
+`VITE_SITE_URL` is unset, metadata uses the placeholder `https://your-domain`
+and generated share links fall back to the current origin.
 
 ```bash
 npm run build   # type-check + production build
@@ -93,8 +96,8 @@ animations — exports stay deterministic.
   (classic card; the portrait design never renders a tagline).
 - **Sections** — rating graph, activity heatmap, hardest challenge, achievement
   stats, watermark.
-- **Stat tiles** — six slots from an eight-stat pool (boss, solved, streak,
-  peak day, grit, contests, active days, peak rating). Unavailable stats are
+- **Stat tiles** — six slots from a nine-stat pool (boss, solved, streak,
+  peak day, grit, contests, active days, peak rating, sniper). Unavailable stats are
   replaced by the next available one from the pool, so tiles never show fake
   zeros or blanks; selecting a duplicate swaps the two slots.
 
@@ -110,6 +113,22 @@ using `toPng`, each template's default pixel ratio (see table), and the active
 theme's background colour, so even translucent surfaces export correctly. The
 filename is `codecard-{template}-{handle}.png`, and the export waits for web
 fonts and cache-busts images. Dashboard chrome is never part of the card.
+
+## Sharing
+
+Share controls can invoke the native share sheet with a pre-rendered PNG, copy
+the image or caption, or open X and LinkedIn share pages. Share URLs use
+`/u/{handle}`; opening one loads that live Codeforces profile. Native share and
+clipboard image support depend on browser permissions and platform support.
+
+## Privacy
+
+Codecard has no accounts, tracking or analytics, and stores no data on its
+servers. Profile data comes directly from the public Codeforces API in your
+browser. Avatars use the third-party wsrv.nl image proxy so they can be embedded
+in downloads. Card settings and small uploaded photos/banners stay in this
+browser's local storage; large uploads remain in memory only. Codecard is not
+affiliated with or endorsed by Codeforces.
 
 ## Live Codeforces data
 
