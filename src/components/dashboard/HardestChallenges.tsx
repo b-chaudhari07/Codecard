@@ -3,10 +3,11 @@ import { ArrowUpRight, Flame, Layers, Trophy } from 'lucide-react'
 import { SectionHeading } from '../ui/SectionHeading'
 import { WidgetState } from './ProfileStates'
 import { cn, formatNumber } from '../../lib/utils'
-import type { HardestProblem, Profile } from '../../types/profile'
+import type { HardestProblem, Profile, StatId } from '../../types/profile'
 
 interface HardestChallengesProps {
   profile: Profile
+  selectedStats: StatId[]
 }
 
 function problemDifficultyColor(rating: number): string {
@@ -19,8 +20,8 @@ function problemDifficultyColor(rating: number): string {
   return '#A6ADBB' // Newbie / Gray
 }
 
-export function HardestChallenges({ profile }: HardestChallengesProps) {
-  const hardest = profile.hardestProblems ?? []
+export function HardestChallenges({ profile, selectedStats }: HardestChallengesProps) {
+  const hardest = (profile.hardestProblems ?? []).slice(0, 5)
   const hasProblems = profile.submissionsAvailable && hardest.length > 0
 
   return (
@@ -106,6 +107,11 @@ export function HardestChallenges({ profile }: HardestChallengesProps) {
                   <h4 className="mt-4 line-clamp-2 text-[14px] font-semibold leading-snug tracking-tight text-ink transition-colors group-hover:text-silver">
                     {problem.name}
                   </h4>
+                  {index === 0 && selectedStats.includes('boss') ? (
+                    <span className="mt-2 inline-flex rounded-full border border-gold/20 bg-gold/10 px-2 py-0.5 text-[9px] font-medium text-gold">
+                      On your card as Boss
+                    </span>
+                  ) : null}
                 </div>
 
                 <div className="mt-5 flex items-center justify-between border-t border-line pt-3 text-[11px] text-muted">
@@ -128,4 +134,3 @@ export function HardestChallenges({ profile }: HardestChallengesProps) {
     </section>
   )
 }
-

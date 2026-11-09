@@ -209,6 +209,23 @@ const STAT_DEFINITIONS: StatDefinition[] = [
 
 const STAT_BY_ID = new Map(STAT_DEFINITIONS.map((stat) => [stat.id, stat]))
 
+/** Resolves each available registry stat once, without slot substitution. */
+export function getAvailableStats(profile: Profile): StatTile[] {
+  return STAT_DEFINITIONS.flatMap((definition) => {
+    const resolution = definition.resolve(profile)
+    if (!resolution) return []
+    return [{
+      id: definition.id,
+      label: definition.label,
+      icon: definition.icon,
+      value: resolution.value,
+      caption: resolution.partial
+        ? `${resolution.caption} ~`
+        : resolution.caption,
+    }]
+  })
+}
+
 /** Cheap labels for the customizer select controls. */
 export const STAT_LABELS: Record<StatId, { label: string; icon: string }> =
   Object.fromEntries(

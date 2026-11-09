@@ -23,7 +23,8 @@ import {
 import type { AppTheme } from './lib/appTheme'
 import { loadCardOptions, persistCardOptions } from './lib/cardOptionsStorage'
 import { parseHandleFromPath } from './lib/routing'
-import type { CardOptions } from './types/profile'
+import { sanitizeStats, swapStat } from './lib/cardStats'
+import type { CardOptions, StatId } from './types/profile'
 
 function App() {
   const {
@@ -39,6 +40,7 @@ function App() {
   } = useCodeforcesProfile()
 
   const [hasSearched, setHasSearched] = useState(false)
+  const [searchAttempt, setSearchAttempt] = useState(0)
   const [theme, setTheme] = useState<AppTheme>(() => getInitialTheme())
   const [cardOptions, setCardOptions] = useState<CardOptions>(() =>
     loadCardOptions(),
@@ -71,11 +73,22 @@ function App() {
 
   const handleSearch = useCallback((handle: string, fromPath = false) => {
     scrollPending.current = true
-    scrollTarget.current = fromPath ? 'studio' : 'results'
+    scrollTarget.current = 'studio'
     updateUrlAfterSearch.current = !fromPath
     setHasSearched(true)
+    setSearchAttempt((attempt) => attempt + 1)
     search(handle)
   }, [search])
+
+  const handleSelectStat = useCallback((statId: StatId) => {
+    setCardOptions((current) => {
+      const stats = sanitizeStats(current.stats)
+      return {
+        ...current,
+        stats: swapStat(stats, stats.length - 1, statId),
+      }
+    })
+  }, [])
 
   useEffect(() => {
     if (initialPathHandled.current) return
@@ -135,7 +148,7 @@ function App() {
     document
       .getElementById(scrollTarget.current)
       ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-  }, [hasSearched, status])
+  }, [hasSearched, searchAttempt, status])
 
   return (
     <div className="relative min-h-screen overflow-x-clip">
@@ -190,13 +203,6 @@ function App() {
                 warnings={profile.warnings}
                 onRetry={profile.isSample ? undefined : retry}
               />
-              <ProfileOverview profile={profile} />
-              <HardestChallenges profile={profile} />
-              <Analytics
-                profile={profile}
-                cardOptions={cardOptions}
-                appTheme={theme}
-              />
               <AppErrorBoundary message="The card studio hit a snag. Your profile dashboard is still available.">
                 <CardStudio
                   profile={profile}
@@ -204,6 +210,17 @@ function App() {
                   onOptionsChange={setCardOptions}
                 />
               </AppErrorBoundary>
+              <ProfileOverview profile={profile} />
+              <Analytics
+                profile={profile}
+                cardOptions={cardOptions}
+                appTheme={theme}
+                onSelectStat={handleSelectStat}
+              />
+              <HardestChallenges
+                profile={profile}
+                selectedStats={cardOptions.stats}
+              />
             </>
           ) : null}
         </div>

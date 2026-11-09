@@ -1,4 +1,5 @@
 import { ContestPerformance } from './ContestPerformance'
+import { MoreStats } from './MoreStats'
 import { ProblemDistribution } from './ProblemDistribution'
 import { RatingHistory } from './RatingHistory'
 import { SubmissionHeatmap } from './SubmissionHeatmap'
@@ -6,15 +7,16 @@ import { TopicAnalysis } from './TopicAnalysis'
 import { SectionHeading } from '../ui/SectionHeading'
 import type { AppTheme } from '../../lib/appTheme'
 import { resolveAccentForMode } from '../../lib/cardThemes'
-import type { CardOptions, Profile } from '../../types/profile'
+import type { CardOptions, Profile, StatId } from '../../types/profile'
 
 interface AnalyticsProps {
   profile: Profile
   cardOptions?: CardOptions
   appTheme?: AppTheme
+  onSelectStat: (statId: StatId) => void
 }
 
-export function Analytics({ profile, cardOptions, appTheme }: AnalyticsProps) {
+export function Analytics({ profile, cardOptions, appTheme, onSelectStat }: AnalyticsProps) {
   const accentColor = cardOptions
     ? resolveAccentForMode(
         appTheme === 'light' ? 'light' : 'dark',
@@ -26,7 +28,7 @@ export function Analytics({ profile, cardOptions, appTheme }: AnalyticsProps) {
 
   return (
     <section
-      id="analytics"
+      id="insights"
       className="section-shell scroll-mt-24 py-16 sm:py-20"
     >
       <SectionHeading
@@ -42,6 +44,11 @@ export function Analytics({ profile, cardOptions, appTheme }: AnalyticsProps) {
         <ContestPerformance profile={profile} />
         <TopicAnalysis profile={profile} />
       </div>
+      <MoreStats
+        profile={profile}
+        selectedStats={cardOptions?.stats ?? []}
+        onSelectStat={onSelectStat}
+      />
     </section>
   )
 }

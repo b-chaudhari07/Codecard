@@ -12,7 +12,6 @@ import {
   cn,
   filterRatingHistory,
   formatNumber,
-  formatSigned,
   rankAccent,
 } from '../../lib/utils'
 import type { Profile, RatingRange } from '../../types/profile'
@@ -33,15 +32,23 @@ export function RatingHistory({ profile }: RatingHistoryProps) {
   )
 
   const hasHistory = profile.ratingHistoryAvailable && filtered.length > 0
-  const first = filtered[0]
-  const last = filtered[filtered.length - 1]
-  const delta = first && last ? last.rating - first.rating : 0
-  const isPositive = delta >= 0
-  const peak =
-    profile.maxRating ??
-    (filtered.length > 0
-      ? Math.max(...filtered.map((point) => point.rating))
-      : null)
+  const rangePoints = useMemo(() => {
+    if (range === 'ALL' || profile.ratingHistory.length === 0) {
+      return profile.ratingHistory
+    }
+    const months = range === '1M' ? 1 : range === '6M' ? 6 : 12
+    const latest = new Date(
+      `${profile.ratingHistory[profile.ratingHistory.length - 1].date}T00:00:00`,
+    )
+    const cutoff = new Date(latest)
+    cutoff.setMonth(cutoff.getMonth() - months)
+    return profile.ratingHistory.filter(
+      (point) => new Date(`${point.date}T00:00:00`) >= cutoff,
+    )
+  }, [profile.ratingHistory, range])
+  const rangeDelta = rangePoints.length >= 2
+    ? rangePoints[rangePoints.length - 1].rating - rangePoints[0].rating
+    : null
 
   return (
     <article className="widget animate-fade-up p-6 sm:p-7 xl:col-span-3">
@@ -96,59 +103,32 @@ export function RatingHistory({ profile }: RatingHistoryProps) {
         />
       ) : (
         <>
-          <div className="mt-7 flex flex-wrap items-end justify-between gap-4">
-            <div>
-              <p className="eyebrow">Current rating</p>
-              <div className="mt-2 flex items-baseline gap-3">
-                <p className="text-[34px] font-semibold leading-none tracking-[-0.04em] text-ink tabular">
-                  {formatNumber(last.rating)}
-                </p>
-                <span
-                  className={cn(
-                    'inline-flex items-center gap-1 rounded-full border px-2 py-1 text-[10px] font-medium tabular',
-                    isPositive
-                      ? 'border-positive/20 bg-positive-soft text-positive'
-                      : 'border-negative/20 bg-negative-soft text-negative',
-                  )}
-                >
-                  {isPositive ? (
-                    <TrendingUp size={11} />
-                  ) : (
-                    <TrendingDown size={11} />
-                  )}
-                  {formatSigned(delta)} in {range === 'ALL' ? 'total' : range}
-                </span>
-              </div>
+          {rangeDelta !== null ? (
+            <div className="mt-7 flex justify-end">
+              <span
+                className={cn(
+                  'inline-flex items-center gap-1 rounded-full border px-2.5 py-1.5 text-[11px] font-medium tabular',
+                  rangeDelta >= 0
+                    ? 'border-positive/20 bg-positive-soft text-positive'
+                    : 'border-negative/20 bg-negative-soft text-negative',
+                )}
+              >
+                {rangeDelta >= 0 ? (
+                  <TrendingUp size={12} />
+                ) : (
+                  <TrendingDown size={12} />
+                )}
+                {rangeDelta > 0 ? '+' : rangeDelta < 0 ? '-' : ''}
+                {formatNumber(Math.abs(rangeDelta))} in {range === 'ALL' ? 'total' : range}
+              </span>
             </div>
-            <div className="text-right">
-              <p className="eyebrow">Peak</p>
-              <p className="mt-2 text-sm font-medium text-silver tabular">
-                {formatNumber(peak)}
-              </p>
-            </div>
-          </div>
+          ) : null}
 
           <div key={range} className="animate-fade-in mt-3">
             <RatingLineChart data={filtered} accent={accent} />
           </div>
 
           <div className="mt-1 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-4 text-[11px] text-muted">
-            <div className="flex items-center gap-5">
-              <span className="inline-flex items-center gap-2">
-                <span
-                  className="h-1.5 w-1.5 rounded-full"
-                  style={{ backgroundColor: accent }}
-                />
-                Current {formatNumber(last.rating)}
-              </span>
-              <span className="inline-flex items-center gap-2">
-                <span
-                  className="h-1.5 w-1.5 rounded-full border"
-                  style={{ borderColor: accent, opacity: 0.5 }}
-                />
-                Peak {formatNumber(peak)}
-              </span>
-            </div>
             <span className="tabular">
               {formatNumber(filtered.length)} rated contests in view
             </span>

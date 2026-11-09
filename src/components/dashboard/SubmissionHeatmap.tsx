@@ -161,7 +161,8 @@ export function SubmissionHeatmap({
           </span>
           <span className="inline-flex items-center gap-1.5 rounded-xl border border-line bg-soft px-3 py-1.5 font-medium text-silver">
             <Flame size={13} style={{ color: accent }} />
-            Peak <strong className="text-ink">{formatNumber(activity.maxDailySubmissions)}</strong>/day
+            Most submissions in a day:{' '}
+            <strong className="text-ink">{formatNumber(activity.maxDailySubmissions)}</strong>
           </span>
         </div>
       </div>
@@ -263,4 +264,3 @@ export function SubmissionHeatmap({
     </article>
   )
 }
-

@@ -1,8 +1,5 @@
-import { Crown, Flag, Target, TrendingUp } from 'lucide-react'
-
-import { MetricCard } from './MetricCard'
-import { SectionHeading } from '../ui/SectionHeading'
-import { cn, formatLongDate, formatNumber, rankAccent } from '../../lib/utils'
+import { formatLongDate, formatNumber } from '../../lib/utils'
+import { calculateRankProgress } from '../../lib/ranks'
 import type { Profile } from '../../types/profile'
 
 interface ProfileOverviewProps {
@@ -10,108 +7,69 @@ interface ProfileOverviewProps {
 }
 
 export function ProfileOverview({ profile }: ProfileOverviewProps) {
-  const ratingAccent = rankAccent(profile.rank)
-  const peakGain =
-    profile.maxRating !== null && profile.rating !== null
-      ? profile.maxRating - profile.rating
-      : null
-
-  const metrics = [
-    {
-      label: 'Current Rating',
-      value: formatNumber(profile.rating),
-      meta: profile.rank ? `Rank: ${profile.rank}` : 'Unrated or unavailable',
-      icon: TrendingUp,
-      accent: ratingAccent,
-    },
-    {
-      label: 'Maximum Rating',
-      value: formatNumber(profile.maxRating),
-      meta:
-        peakGain !== null
-          ? `+${formatNumber(peakGain)} above current rating`
-          : profile.maxRank
-            ? `Peak rank: ${profile.maxRank}`
-            : 'No rated contests yet',
-      icon: Crown,
-      accent: '#D7B45E',
-    },
-    {
-      label: 'Problems Solved',
-      value: formatNumber(profile.problemsSolved),
-      meta: !profile.submissionsAvailable
-        ? 'Unavailable'
-        : profile.unratedSolved
-          ? `${formatNumber(profile.unratedSolved)} without a difficulty rating`
-          : 'Distinct problems accepted',
-      icon: Target,
-      accent: '#C8D0DC',
-    },
-    {
-      label: 'Rated Contests',
-      value: formatNumber(profile.ratedContests),
-      meta: profile.ratingHistoryAvailable
-        ? 'Rated rounds completed'
-        : 'Unavailable',
-      icon: Flag,
-      accent: '#6AA8FF',
-    },
-  ]
-
+  const progress = calculateRankProgress(profile.rank, profile.rating)
   const details = [
-    profile.country,
-    profile.maxRank ? `Peak rank: ${profile.maxRank}` : null,
-    profile.contribution !== null
-      ? `Contribution: ${formatNumber(profile.contribution)}`
-      : null,
+    profile.country ? { label: 'Country', value: profile.country } : null,
     profile.registrationDate
-      ? `Member since ${formatLongDate(profile.registrationDate)}`
+      ? { label: 'Member since', value: formatLongDate(profile.registrationDate) }
       : null,
-    profile.organization,
-  ].filter((value): value is string => Boolean(value))
+    profile.contribution !== null
+      ? { label: 'Contribution', value: formatNumber(profile.contribution) }
+      : null,
+    profile.maxRank ? { label: 'Peak rank', value: profile.maxRank } : null,
+  ].filter((item): item is { label: string; value: string } => item !== null)
 
   return (
     <section
-      id="overview"
-      className="section-shell scroll-mt-24 py-20 sm:py-24"
+      id="profile-strip"
+      aria-label="Profile details"
+      className="section-shell py-4 sm:py-5"
     >
-      <SectionHeading
-        eyebrow="Overview"
-        title="Your Competitive Journey"
-        description="A snapshot of where you are, how far you have come, and what you have built along the way."
-        action={
-          <div className="inline-flex items-center gap-2 rounded-full border border-line bg-widget px-3 py-1.5 text-[11px] text-muted">
-            <span
-              className={cn(
-                'h-1.5 w-1.5 rounded-full',
-                profile.isSample
-                  ? 'animate-pulse-soft bg-gold'
-                  : 'bg-positive',
-              )}
-            />
-            {profile.isSample ? 'Sample data' : 'Live data'}
-            <span className="text-line">/</span>
-            <span className="text-silver/80">@{profile.handle}</span>
-          </div>
-        }
-      />
-
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {metrics.map((metric, index) => (
-          <MetricCard key={metric.label} {...metric} index={index} />
-        ))}
-      </div>
-
-      {details.length > 0 ? (
-        <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 rounded-2xl border border-line bg-widget/60 px-5 py-3 text-[11px] text-muted">
-          {details.map((detail) => (
-            <span key={detail} className="inline-flex items-center gap-2">
-              <span className="h-1 w-1 rounded-full bg-silver/40" />
-              {detail}
-            </span>
+      <div className="flex flex-col gap-4 rounded-2xl border border-line bg-widget/60 px-5 py-4 md:flex-row md:items-center md:justify-between">
+        <div className="flex flex-wrap gap-x-6 gap-y-3">
+          {details.map(({ label, value }) => (
+            <div key={label}>
+              <p className="text-[9px] font-medium uppercase tracking-[0.16em] text-muted/70">
+                {label}
+              </p>
+              <p className="mt-0.5 text-[12px] font-medium text-silver">{value}</p>
+            </div>
           ))}
         </div>
-      ) : null}
+
+        {progress?.kind === 'top' ? (
+          <p className="shrink-0 text-[11px] font-medium text-silver">
+            Top rank reached
+          </p>
+        ) : progress?.kind === 'progress' ? (
+          <div className="w-full max-w-xs shrink-0">
+            <div className="mb-1.5 flex items-center justify-between gap-3 text-[10px]">
+              <span className="font-medium text-silver">
+                {formatNumber(progress.remaining)} rating to {progress.nextRank}
+              </span>
+              <span className="text-muted">
+                {progress.currentThreshold}–{progress.nextThreshold}
+              </span>
+            </div>
+            <div
+              role="progressbar"
+              aria-label={`Progress to ${progress.nextRank}`}
+              aria-valuemin={progress.currentThreshold}
+              aria-valuemax={progress.nextThreshold}
+              aria-valuenow={Math.min(
+                progress.nextThreshold,
+                Math.max(progress.currentThreshold, profile.rating ?? progress.currentThreshold),
+              )}
+              className="h-1.5 overflow-hidden rounded-full bg-soft-2"
+            >
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-silver/70 to-gold"
+                style={{ width: `${progress.progress}%` }}
+              />
+            </div>
+          </div>
+        ) : null}
+      </div>
     </section>
   )
 }

@@ -7,10 +7,9 @@ import type { Profile } from '../../types/profile'
 import { cn } from '../../lib/utils'
 
 const NAV_ITEMS = [
-  { label: 'Overview', href: '#overview', id: 'overview' },
+  { label: 'Card', href: '#studio', id: 'studio' },
+  { label: 'Insights', href: '#insights', id: 'insights' },
   { label: 'Challenges', href: '#challenges', id: 'challenges' },
-  { label: 'Analytics', href: '#analytics', id: 'analytics' },
-  { label: 'Card Studio', href: '#studio', id: 'studio' },
   { label: 'About', href: '#about', id: 'about' },
 ]
 
@@ -26,7 +25,7 @@ interface HeaderProps {
 }
 
 export function Header({ theme, onToggleTheme, profile }: HeaderProps) {
-  const [activeSection, setActiveSection] = useState('overview')
+  const [activeSection, setActiveSection] = useState('studio')
 
   useEffect(() => {
     const sections = NAV_ITEMS.map((item) =>
@@ -105,7 +104,7 @@ export function Header({ theme, onToggleTheme, profile }: HeaderProps) {
             href="#studio"
             className="rounded-full border border-line bg-surface px-3.5 py-1.5 text-[12px] font-medium text-silver transition-colors hover:border-silver/25 hover:text-ink md:hidden"
           >
-            Card Studio
+            Card
           </a>
         </div>
       </div>

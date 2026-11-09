@@ -54,8 +54,8 @@ export function Footer() {
               <p className="eyebrow">Product</p>
               <ul className="mt-4 space-y-2.5">
                 <li>
-                  <a href="#overview" className="text-muted transition-colors hover:text-ink">
-                    Overview
+                  <a href="#studio" className="text-muted transition-colors hover:text-ink">
+                    Card
                   </a>
                 </li>
                 <li>
@@ -64,13 +64,8 @@ export function Footer() {
                   </a>
                 </li>
                 <li>
-                  <a href="#analytics" className="text-muted transition-colors hover:text-ink">
-                    Analytics
-                  </a>
-                </li>
-                <li>
-                  <a href="#studio" className="text-muted transition-colors hover:text-ink">
-                    Card Studio
+                  <a href="#insights" className="text-muted transition-colors hover:text-ink">
+                    Insights
                   </a>
                 </li>
               </ul>
