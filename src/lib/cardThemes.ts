@@ -264,7 +264,7 @@ export function mixHex(hex: string, target: string, amount: number): string {
 }
 
 export const DEFAULT_CARD_OPTIONS: CardOptions = {
-  template: 'classic',
+  template: 'portrait',
   theme: 'obsidian',
   accent: 'emerald',
   autoRankColor: false,

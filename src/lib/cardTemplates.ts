@@ -29,7 +29,7 @@ export const TEMPLATES: Record<TemplateId, CardTemplate> = {
     height: 1350,
     aspect: '4:5',
     pixelRatio: 2,
-    available: false,
+    available: true,
     description: 'Feed-ready portrait',
   },
   story: {
