@@ -24,6 +24,14 @@ npm run dev
 
 Open the local URL printed by Vite (default `http://localhost:5173`).
 
+## Deploy
+
+Set `VITE_SITE_URL` to the public site origin (for example,
+`https://codecard.example.com`) before building. Add `public/og.png` at 1200×630
+for social link previews; preview images are generic until per-user previews
+exist. Build with `npm run build` and deploy the `dist` output directory. If
+`VITE_SITE_URL` is unset, metadata uses the placeholder `https://your-domain`.
+
 ```bash
 npm run build   # type-check + production build
 npm run lint    # Oxlint

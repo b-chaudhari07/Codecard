@@ -4,6 +4,7 @@ import { ArrowRight, Loader2, Search, Sparkles } from 'lucide-react'
 
 import { CodeforcesMark } from '../ui/CodeforcesMark'
 import { cn } from '../../lib/utils'
+import { isValidHandle } from '../../lib/routing'
 
 interface HeroProps {
   onSearch: (handle: string) => void
@@ -12,8 +13,6 @@ interface HeroProps {
   hasError: boolean
   activeHandle: string | null
 }
-
-const HANDLE_PATTERN = /^[a-zA-Z0-9_.-]{3,24}$/
 
 export function Hero({
   onSearch,
@@ -34,7 +33,7 @@ export function Hero({
       return
     }
 
-    if (!HANDLE_PATTERN.test(handle)) {
+    if (!isValidHandle(handle)) {
       setError('Handles are 3–24 characters: letters, numbers, "_", "." or "-".')
       return
     }

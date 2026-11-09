@@ -165,7 +165,9 @@ export function CardStudio({
         `codecard-${options.template}-${profile.handle}.png`,
         { type: 'image/png' },
       )
-      await action(shareBlob, file, getSiteUrl())
+      const siteRoot = getSiteUrl().replace(/\/+$/, '')
+      const profileUrl = `${siteRoot}/u/${encodeURIComponent(profile.handle)}`
+      await action(shareBlob, file, profileUrl)
     } catch {
       setShareMessage('Could not complete that action. Please try again.')
     } finally {

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { Analytics } from './components/dashboard/Analytics'
 import { HardestChallenges } from './components/dashboard/HardestChallenges'
@@ -21,6 +21,7 @@ import {
 } from './lib/appTheme'
 import type { AppTheme } from './lib/appTheme'
 import { loadCardOptions, persistCardOptions } from './lib/cardOptionsStorage'
+import { parseHandleFromPath } from './lib/routing'
 import type { CardOptions } from './types/profile'
 
 function App() {
@@ -42,6 +43,9 @@ function App() {
     loadCardOptions(),
   )
   const scrollPending = useRef(false)
+  const scrollTarget = useRef<'results' | 'studio'>('results')
+  const initialPathHandled = useRef(false)
+  const updateUrlAfterSearch = useRef(false)
 
   useEffect(() => {
     applyTheme(theme)
@@ -64,11 +68,56 @@ function App() {
     return () => media.removeEventListener('change', handleChange)
   }, [])
 
-  const handleSearch = (handle: string) => {
+  const handleSearch = useCallback((handle: string, fromPath = false) => {
     scrollPending.current = true
+    scrollTarget.current = fromPath ? 'studio' : 'results'
+    updateUrlAfterSearch.current = !fromPath
     setHasSearched(true)
     search(handle)
-  }
+  }, [search])
+
+  useEffect(() => {
+    if (initialPathHandled.current) return
+    const pathHandle = parseHandleFromPath(window.location.pathname)
+    if (!pathHandle) {
+      initialPathHandled.current = true
+      return
+    }
+    const timer = window.setTimeout(() => {
+      initialPathHandled.current = true
+      handleSearch(pathHandle, true)
+    }, 0)
+    return () => window.clearTimeout(timer)
+  }, [handleSearch])
+
+  useEffect(() => {
+    const handlePopState = () => {
+      const pathHandle = parseHandleFromPath(window.location.pathname)
+      updateUrlAfterSearch.current = false
+      if (pathHandle) {
+        handleSearch(pathHandle, true)
+      } else {
+        scrollPending.current = false
+        setHasSearched(false)
+        showDemo()
+      }
+    }
+    window.addEventListener('popstate', handlePopState)
+    return () => window.removeEventListener('popstate', handlePopState)
+  }, [handleSearch, showDemo])
+
+  useEffect(() => {
+    if (status !== 'success' || !profile || isDemo) return
+    if (!updateUrlAfterSearch.current) return
+    updateUrlAfterSearch.current = false
+    const nextPath = `/u/${encodeURIComponent(profile.handle)}`
+    const currentHandle = parseHandleFromPath(window.location.pathname)
+    if (currentHandle?.toLowerCase() === profile.handle.toLowerCase()) {
+      window.history.replaceState(null, '', nextPath)
+    } else {
+      window.history.pushState(null, '', nextPath)
+    }
+  }, [status, profile, isDemo])
 
   useEffect(() => {
     if (!hasSearched || !scrollPending.current) return
@@ -80,9 +129,10 @@ function App() {
       return
     }
 
+    if (scrollTarget.current === 'studio' && status !== 'success') return
     scrollPending.current = false
     document
-      .getElementById('results')
+      .getElementById(scrollTarget.current)
       ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }, [hasSearched, status])
 

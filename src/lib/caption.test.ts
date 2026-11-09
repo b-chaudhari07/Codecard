@@ -5,7 +5,7 @@ import { DEFAULT_CARD_OPTIONS } from './cardThemes'
 import { sampleProfile } from '../data/sampleProfile'
 import type { CardOptions, Profile } from '../types/profile'
 
-const url = 'https://example.com/card/handle'
+const url = 'https://example.com/u/handle'
 
 function profile(overrides: Partial<Profile> = {}): Profile {
   return { ...sampleProfile, ...overrides }

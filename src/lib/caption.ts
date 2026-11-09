@@ -8,7 +8,7 @@ const X_URL_LENGTH = 23
 
 export function getSiteUrl(): string {
   const configured = import.meta.env.VITE_SITE_URL?.trim()
-  if (configured) return configured
+  if (configured && configured !== 'https://your-domain') return configured
   return typeof window === 'undefined' ? '' : window.location.origin
 }
 
