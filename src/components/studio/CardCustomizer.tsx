@@ -23,6 +23,12 @@ import {
 import type { CardTheme } from '../../lib/cardThemes'
 import { TEMPLATES, TEMPLATE_IDS, getTemplate } from '../../lib/cardTemplates'
 import { generateDesignation } from '../../lib/designation'
+import {
+  STAT_LABELS,
+  STAT_POOL,
+  sanitizeStats,
+  swapStat,
+} from '../../lib/cardStats'
 import { cn } from '../../lib/utils'
 import type {
   AccentId,
@@ -816,6 +822,57 @@ export function CardCustomizer({
             onChange={(checked) => update({ showWatermark: checked })}
           />
         </div>
+      </div>
+
+      {/* Stat tiles */}
+      <div className="mt-4 border-t border-line pt-3.5">
+        <div className="flex items-center justify-between">
+          <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-muted">
+            Stat tiles
+          </p>
+          <span className="text-[10px] text-muted/70">
+            {sanitizeStats(options.stats).length}/6 slots
+          </span>
+        </div>
+        <div className="mt-2 grid grid-cols-2 gap-2">
+          {sanitizeStats(options.stats).map((statId, index) => (
+            <label
+              key={`${index}-${statId}`}
+              className="flex items-center gap-1.5 rounded-lg border border-line bg-soft px-2 py-1.5"
+              title={`Slot ${index + 1}`}
+            >
+              <span className="w-3 text-[9px] text-muted/60 tabular">
+                {index + 1}
+              </span>
+              <span className="text-[13px] leading-none">
+                {STAT_LABELS[statId].icon}
+              </span>
+              <select
+                value={statId}
+                onChange={(event) =>
+                  update({
+                    stats: swapStat(
+                      sanitizeStats(options.stats),
+                      index,
+                      event.target.value as CardOptions['stats'][number],
+                    ),
+                  })
+                }
+                className="min-w-0 flex-1 appearance-none bg-transparent text-[10px] font-medium text-silver focus:outline-none"
+              >
+                {STAT_POOL.map((id) => (
+                  <option key={id} value={id}>
+                    {STAT_LABELS[id].label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ))}
+        </div>
+        <p className="mt-1.5 text-[9px] leading-relaxed text-muted/60">
+          Duplicate picks swap slots. Unavailable stats are replaced with the
+          next available tile.
+        </p>
       </div>
 
       {/* Download button */}

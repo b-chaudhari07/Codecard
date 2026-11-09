@@ -182,6 +182,16 @@ export type DesignationMode = 'auto' | 'custom'
 
 export type BannerPosition = 'top' | 'center' | 'bottom'
 
+export type StatId =
+  | 'boss'
+  | 'solved'
+  | 'streak'
+  | 'peakDay'
+  | 'grit'
+  | 'contests'
+  | 'activeDays'
+  | 'maxRating'
+
 export interface CardOptions {
   template: TemplateId
   theme: CardThemeId
@@ -204,6 +214,8 @@ export interface CardOptions {
   customPhoto: string | null
   /** Render the classic card's tagline. Ignored by the portrait card. */
   showDesignation: boolean
+  /** Which stat tiles to show, in display order. */
+  stats: StatId[]
   showRatingChart: boolean
   showHeatmap: boolean
   showHardestProblem: boolean

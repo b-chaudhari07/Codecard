@@ -20,7 +20,7 @@ import {
   persistTheme,
 } from './lib/appTheme'
 import type { AppTheme } from './lib/appTheme'
-import { DEFAULT_CARD_OPTIONS } from './lib/cardThemes'
+import { loadCardOptions, persistCardOptions } from './lib/cardOptionsStorage'
 import type { CardOptions } from './types/profile'
 
 function App() {
@@ -38,14 +38,19 @@ function App() {
 
   const [hasSearched, setHasSearched] = useState(false)
   const [theme, setTheme] = useState<AppTheme>(() => getInitialTheme())
-  const [cardOptions, setCardOptions] =
-    useState<CardOptions>(DEFAULT_CARD_OPTIONS)
+  const [cardOptions, setCardOptions] = useState<CardOptions>(() =>
+    loadCardOptions(),
+  )
   const scrollPending = useRef(false)
 
   useEffect(() => {
     applyTheme(theme)
     persistTheme(theme)
   }, [theme])
+
+  useEffect(() => {
+    persistCardOptions(cardOptions)
+  }, [cardOptions])
 
   useEffect(() => {
     const media = window.matchMedia('(prefers-color-scheme: light)')

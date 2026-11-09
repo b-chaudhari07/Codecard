@@ -6,6 +6,7 @@ import { ProfileCard } from './ProfileCard'
 import { SectionHeading } from '../ui/SectionHeading'
 import { getTemplate } from '../../lib/cardTemplates'
 import { CARD_THEMES, DEFAULT_CARD_OPTIONS } from '../../lib/cardThemes'
+import { clearCardOptions } from '../../lib/cardOptionsStorage'
 import type { CardOptions, Profile } from '../../types/profile'
 
 interface CardStudioProps {
@@ -90,7 +91,7 @@ export function CardStudio({
       })
 
       const link = document.createElement('a')
-      link.download = `codecard-${profile.handle}.png`
+      link.download = `codecard-${options.template}-${profile.handle}.png`
       link.href = dataUrl
       document.body.appendChild(link)
       link.click()
@@ -208,6 +209,7 @@ export function CardStudio({
           onChange={setOptions}
           onReset={() => {
             setOptions(DEFAULT_CARD_OPTIONS)
+            clearCardOptions()
             setError(null)
           }}
           onDownload={handleDownload}
