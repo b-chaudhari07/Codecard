@@ -283,6 +283,8 @@ export const sampleProfile: Profile = {
     problemIndex: hardestProblems[0].index,
     partial: false,
   },
+  // Live-contest accuracy sample: 45 of 64 contest solves were first-try.
+  sniper: { percent: 70, firstTry: 45, solved: 64, partial: false },
   contests: ratingHistory.length,
   bestComeback: Math.max(...ratingHistory.map((point) => point.change)),
   topTag: { tag: 'dp', solved: 148, partial: false },

@@ -14,6 +14,7 @@ export const STAT_POOL: StatId[] = [
   'contests',
   'activeDays',
   'maxRating',
+  'sniper',
 ]
 
 /** Default six-tile selection, in display order. */
@@ -21,9 +22,9 @@ export const DEFAULT_STATS: StatId[] = [
   'boss',
   'solved',
   'streak',
+  'activeDays',
   'peakDay',
   'grit',
-  'contests',
 ]
 
 export interface StatTile {
@@ -171,7 +172,7 @@ const STAT_DEFINITIONS: StatDefinition[] = [
       if (activeDays <= 0) return null
       return {
         value: formatNumber(activeDays),
-        caption: 'active days',
+        caption: 'days with submissions',
         partial: false,
       }
     },
@@ -187,6 +188,20 @@ const STAT_DEFINITIONS: StatDefinition[] = [
         value: formatNumber(maxRating),
         caption: 'peak rating',
         partial: false,
+      }
+    },
+  },
+  {
+    id: 'sniper',
+    label: 'Sniper',
+    icon: '🎯',
+    resolve: (profile) => {
+      const sniper = profile.sniper
+      if (!sniper) return null
+      return {
+        value: `${sniper.percent}%`,
+        caption: 'first-try in contests',
+        partial: sniper.partial,
       }
     },
   },
@@ -224,7 +239,7 @@ export function sanitizeStats(stats: StatId[] | null | undefined): StatId[] {
       result.push(id)
     }
   }
-  for (const id of STAT_POOL) {
+  for (const id of [...DEFAULT_STATS, ...STAT_POOL]) {
     if (result.length >= STAT_POOL_BASE_COUNT) break
     if (!result.includes(id)) result.push(id)
   }

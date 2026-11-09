@@ -28,6 +28,7 @@ function makeProfile(overrides: Partial<Profile> = {}): Profile {
     submissionActivity: null,
     peakDay: { count: 0, date: null, partial: false },
     grit: { count: 0, problemName: null, problemIndex: null, partial: false },
+    sniper: null,
     contests: 5,
     bestComeback: null,
     topTag: null,

@@ -6,6 +6,7 @@ import type {
   HardestProblem,
   HeatmapDay,
   PeakDayStat,
+  SniperStat,
   Profile,
   RatingPoint,
   SubmissionActivity,
@@ -348,6 +349,66 @@ const GRIT_IGNORED_VERDICTS = new Set([
 ])
 
 /**
+ * Sniper accuracy: among problems the user solved DURING live contests, the
+ * percent whose first contest submission was accepted.
+ *
+ * Only submissions with `author.participantType === 'CONTESTANT'` count;
+ * practice, virtual and out-of-competition submissions are ignored. The first
+ * submission is the earliest one by `creationTimeSeconds` (array order is not
+ * trusted). COMPILATION_ERROR submissions are skipped when picking the first
+ * submission — a compile error never reached a judge, so it is not treated as
+ * a real attempt, mirroring the grit rule. Any other early verdict other than
+ * OK (wrong answer, TLE, …) marks the problem as retried.
+ *
+ * Returns null when the user has no accepted live-contest solves.
+ */
+export function buildSniper(
+  submissions: CodeforcesSubmission[],
+  partial: boolean,
+): SniperStat | null {
+  const contestSubmissions = submissions.filter(
+    (submission) => submission.author.participantType === 'CONTESTANT',
+  )
+
+  const byProblem = new Map<string, CodeforcesSubmission[]>()
+  for (const submission of contestSubmissions) {
+    const key = submissionProblemKey(submission)
+    const group = byProblem.get(key)
+    if (group) group.push(submission)
+    else byProblem.set(key, [submission])
+  }
+
+  let solved = 0
+  let firstTry = 0
+  for (const group of byProblem.values()) {
+    const firstOk = group.some(
+      (submission) => submission.verdict === 'OK',
+    )
+    if (!firstOk) continue
+
+    // Earliest contest submission, ignoring compile errors: the "first" is
+    // the earliest submission that actually ran against the tests.
+    const judged = group
+      .filter(
+        (submission) => submission.verdict !== 'COMPILATION_ERROR',
+      )
+      .sort((a, b) => a.creationTimeSeconds - b.creationTimeSeconds)
+    if (judged.length === 0) continue
+
+    solved += 1
+    if (judged[0].verdict === 'OK') firstTry += 1
+  }
+
+  if (solved === 0) return null
+  return {
+    percent: Math.round((firstTry / solved) * 100),
+    firstTry,
+    solved,
+    partial,
+  }
+}
+
+/**
  * Among problems that were eventually solved, the largest number of non-OK
  * submissions before the first accepted one. Submissions for the same problem
  * from a contest and later practice are grouped together by problem key.
@@ -557,6 +618,7 @@ export function transformProfile({
     submissionsTruncated,
   )
   const grit = buildGrit(submissions ?? [], submissionsTruncated)
+  const sniper = buildSniper(submissions ?? [], submissionsTruncated)
   const bestComeback =
     ratingHistory.length > 0
       ? Math.max(...ratingHistory.map((point) => point.change))
@@ -606,6 +668,7 @@ export function transformProfile({
     submissionActivity,
     peakDay,
     grit,
+    sniper,
     contests: ratingHistory.length,
     bestComeback,
     topTag: buildTopTag(topics, submissionsTruncated),

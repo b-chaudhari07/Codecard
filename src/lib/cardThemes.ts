@@ -332,7 +332,7 @@ export const DEFAULT_CARD_OPTIONS: CardOptions = {
   bannerPosition: 'center',
   customPhoto: null,
   showDesignation: true,
-  stats: ['boss', 'solved', 'streak', 'peakDay', 'grit', 'contests'],
+  stats: ['boss', 'solved', 'streak', 'activeDays', 'peakDay', 'grit'],
   showRatingChart: true,
   showHeatmap: true,
   showHardestProblem: true,

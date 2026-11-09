@@ -105,6 +105,17 @@ export interface GritStat {
   partial: boolean
 }
 
+export interface SniperStat {
+  /** Integer 0-100: first-try share of live-contest solves. */
+  percent: number
+  /** Problems whose earliest contest submission was accepted. */
+  firstTry: number
+  /** Problems solved with at least one accepted contest submission. */
+  solved: number
+  /** True when the submission history was capped by the API pagination limit. */
+  partial: boolean
+}
+
 export interface TopTagStat {
   tag: string
   solved: number
@@ -151,6 +162,7 @@ export interface Profile {
   submissionActivity: SubmissionActivity | null
   peakDay: PeakDayStat
   grit: GritStat
+  sniper: SniperStat | null
   contests: number
   bestComeback: number | null
   topTag: TopTagStat | null
@@ -191,6 +203,7 @@ export type StatId =
   | 'contests'
   | 'activeDays'
   | 'maxRating'
+  | 'sniper'
 
 export interface CardOptions {
   template: TemplateId
