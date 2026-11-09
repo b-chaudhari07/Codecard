@@ -81,7 +81,7 @@ export const CARD_THEMES: Record<CardThemeId, CardTheme> = {
     chartGrid: 'rgba(23, 23, 29, 0.07)',
     chartLabel: 'rgba(23, 23, 29, 0.42)',
     chartDot: '#FFFFFF',
-    heatmapEmpty: '#122019',
+    heatmapEmpty: '#E3E7EC',
     glowPrimary: 'rgba(95, 208, 160, 0.14)',
     glowSecondary: 'rgba(185, 167, 255, 0.14)',
     surfaceGradient:
@@ -153,6 +153,60 @@ export const RANK_ACCENTS: Record<
   Grandmaster: { dark: '#FF7A7A', light: '#C53030' },
   'International Grandmaster': { dark: '#FF5C5C', light: '#B91C1C' },
   'Legendary Grandmaster': { dark: '#FF4D4D', light: '#991B1B' },
+}
+
+export type CardRarity =
+  | 'COMMON'
+  | 'UNCOMMON'
+  | 'RARE'
+  | 'EPIC'
+  | 'EPIC+'
+  | 'LEGENDARY'
+  | 'MYTHIC'
+
+/**
+ * Rarity is derived from the Codeforces rank alone. It never implies an
+ * achievement beyond what the rank itself represents.
+ */
+export const RARITY_BY_RANK: Record<CodeforcesRank, CardRarity> = {
+  Newbie: 'COMMON',
+  Pupil: 'UNCOMMON',
+  Specialist: 'RARE',
+  Expert: 'EPIC',
+  'Candidate Master': 'EPIC+',
+  Master: 'LEGENDARY',
+  'International Master': 'LEGENDARY',
+  Grandmaster: 'MYTHIC',
+  'International Grandmaster': 'MYTHIC',
+  'Legendary Grandmaster': 'MYTHIC',
+}
+
+export function getRarity(rank: CodeforcesRank | null): CardRarity {
+  return rank ? RARITY_BY_RANK[rank] : 'COMMON'
+}
+
+/** Foil begins at Expert and gets richer with the rank tier. */
+export function hasFoil(rank: CodeforcesRank | null): boolean {
+  return (
+    rank === 'Expert' ||
+    rank === 'Candidate Master' ||
+    rank === 'Master' ||
+    rank === 'International Master' ||
+    rank === 'Grandmaster' ||
+    rank === 'International Grandmaster' ||
+    rank === 'Legendary Grandmaster'
+  )
+}
+
+/** The strongest ranks also get an inset rank-colour glow. */
+export function hasInnerGlow(rank: CodeforcesRank | null): boolean {
+  return (
+    rank === 'Master' ||
+    rank === 'International Master' ||
+    rank === 'Grandmaster' ||
+    rank === 'International Grandmaster' ||
+    rank === 'Legendary Grandmaster'
+  )
 }
 
 export const THEME_IDS: CardThemeId[] = ['obsidian', 'minimal']
@@ -276,6 +330,8 @@ export const DEFAULT_CARD_OPTIONS: CardOptions = {
   showBanner: true,
   customBanner: null,
   bannerPosition: 'center',
+  customPhoto: null,
+  showDesignation: true,
   showRatingChart: true,
   showHeatmap: true,
   showHardestProblem: true,

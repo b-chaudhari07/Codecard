@@ -10,6 +10,7 @@ export function RankBadge({
   compact = false,
   large = false,
   background,
+  label,
 }: {
   rank: CodeforcesRank | null
   rankColor: string
@@ -17,6 +18,8 @@ export function RankBadge({
   compact?: boolean
   large?: boolean
   background?: string
+  /** Optional text override, e.g. a rarity tier. */
+  label?: string
 }) {
   const isLarge = large && !compact
 
@@ -46,7 +49,7 @@ export function RankBadge({
       }}
     >
       <Shield size={compact ? 10 : isLarge ? 26 : 12} strokeWidth={2.2} />
-      {rank ?? 'Unrated'}
+      {label ?? rank ?? 'Unrated'}
     </span>
   )
 }

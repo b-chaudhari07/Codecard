@@ -6,6 +6,9 @@ import { ProfileAvatar } from '../ui/ProfileAvatar'
 import { getTemplate } from '../../lib/cardTemplates'
 import {
   CARD_THEMES,
+  getRarity,
+  hasFoil,
+  hasInnerGlow,
   resolveAccent,
   resolveRankAccent,
   withAlpha,
@@ -59,9 +62,11 @@ function compactDate(iso: string): string {
 function ActivityHeatmap({
   days,
   color,
+  emptyColor,
 }: {
   days: HeatmapDay[]
   color: string
+  emptyColor: string
 }) {
   return (
     <div
@@ -76,16 +81,19 @@ function ActivityHeatmap({
         gap: 6,
       }}
     >
-      {days.map((day) => (
-        <div
-          key={day.date}
-          style={{
-            borderRadius: 6,
-            backgroundColor: color,
-            opacity: HEATMAP_OPACITY[getHeatmapLevel(day.submissions)],
-          }}
-        />
-      ))}
+      {days.map((day) => {
+        const level = getHeatmapLevel(day.submissions)
+        return (
+          <div
+            key={day.date}
+            style={{
+              borderRadius: 6,
+              backgroundColor: level === 0 ? emptyColor : color,
+              opacity: level === 0 ? 1 : HEATMAP_OPACITY[level],
+            }}
+          />
+        )
+      })}
     </div>
   )
 }
@@ -269,6 +277,9 @@ export const PortraitCard = forwardRef<HTMLDivElement, PortraitCardProps>(
       options.customAccent,
     )
     const rankColor = resolveRankAccent(profile.rank, theme.mode) ?? accent
+    const rarity = getRarity(profile.rank)
+    const foil = hasFoil(profile.rank)
+    const innerGlow = hasInnerGlow(profile.rank)
     const heroShadow = isDark
       ? '0 2px 18px rgba(0,0,0,0.58)'
       : '0 1px 0 rgba(255,255,255,0.72)'
@@ -507,6 +518,47 @@ export const PortraitCard = forwardRef<HTMLDivElement, PortraitCardProps>(
           }}
         />
 
+        {/* Static holographic foil: above the background, below the content. */}
+        {foil ? (
+          <div
+            aria-hidden="true"
+            style={{
+              position: 'absolute',
+              inset: 0,
+              zIndex: 0,
+              pointerEvents: 'none',
+              background: `linear-gradient(115deg, transparent 16%, ${withAlpha(
+                '#FFFFFF',
+                0.24,
+              )} 32%, ${withAlpha(rankColor, 0.22)} 44%, ${withAlpha(
+                '#FFFFFF',
+                0.1,
+              )} 54%, transparent 66%, ${withAlpha(
+                rankColor,
+                0.14,
+              )} 80%, transparent 92%)`,
+              mixBlendMode: 'screen',
+              opacity: isDark ? 0.9 : 0.72,
+            }}
+          />
+        ) : null}
+        {innerGlow ? (
+          <div
+            aria-hidden="true"
+            style={{
+              position: 'absolute',
+              inset: 0,
+              zIndex: 0,
+              pointerEvents: 'none',
+              borderRadius: CARD_RADIUS,
+              boxShadow: `inset 0 0 90px ${withAlpha(
+                rankColor,
+                isDark ? 0.28 : 0.2,
+              )}, inset 0 0 0 2px ${withAlpha(rankColor, 0.4)}`,
+            }}
+          />
+        ) : null}
+
         <div
           style={{
             position: 'relative',
@@ -544,11 +596,8 @@ export const PortraitCard = forwardRef<HTMLDivElement, PortraitCardProps>(
               rankColor={rankColor}
               accent={accent}
               large
-              background={
-                isDark
-                  ? 'rgba(8, 10, 14, 0.55)'
-                  : 'rgba(255, 255, 255, 0.62)'
-              }
+              label={rarity}
+              background="rgba(8, 10, 14, 0.55)"
             />
           </header>
 
@@ -599,7 +648,11 @@ export const PortraitCard = forwardRef<HTMLDivElement, PortraitCardProps>(
                 }}
               >
                 <ProfileAvatar
-                  src={profile.avatarDataUrl ?? profile.avatarUrl}
+                  src={
+                    options.customPhoto ??
+                    profile.avatarDataUrl ??
+                    profile.avatarUrl
+                  }
                   initials={profile.initials}
                   size={184}
                   accent={rankColor}
@@ -736,6 +789,7 @@ export const PortraitCard = forwardRef<HTMLDivElement, PortraitCardProps>(
                   <ActivityHeatmap
                     days={heatmapDays}
                     color={rankColor}
+                    emptyColor={theme.heatmapEmpty}
                   />
                 ) : null}
                 {hasChart ? (

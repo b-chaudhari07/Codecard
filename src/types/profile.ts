@@ -200,6 +200,10 @@ export interface CardOptions {
   /** Data URL for a user-uploaded banner. */
   customBanner: string | null
   bannerPosition: BannerPosition
+  /** Data URL for a user-uploaded profile photo. */
+  customPhoto: string | null
+  /** Render the classic card's tagline. Ignored by the portrait card. */
+  showDesignation: boolean
   showRatingChart: boolean
   showHeatmap: boolean
   showHardestProblem: boolean

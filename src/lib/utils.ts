@@ -1,3 +1,4 @@
+import { RANK_ACCENTS } from './cardThemes'
 import type {
   CodeforcesRank,
   Profile,
@@ -81,22 +82,10 @@ export function filterRatingHistory(
   return history.slice(Math.max(0, lastIndex - 1))
 }
 
-export const RANK_COLORS: Record<CodeforcesRank, string> = {
-  Newbie: '#9CA3AF',
-  Pupil: '#22C55E',
-  Specialist: '#14B8A6',
-  Expert: '#3B82F6',
-  'Candidate Master': '#A855F7',
-  Master: '#F59E0B',
-  'International Master': '#F97316',
-  Grandmaster: '#EF4444',
-  'International Grandmaster': '#DC2626',
-  'Legendary Grandmaster': '#B91C1C',
-}
-
+/** Dashboard rank colour, using the dark-surface variant. */
 export function rankAccent(rank: CodeforcesRank | null): string {
   if (!rank) return '#C8D0DC'
-  return RANK_COLORS[rank]
+  return RANK_ACCENTS[rank].dark
 }
 
 export function formatMemberSince(profile: Profile): string {
