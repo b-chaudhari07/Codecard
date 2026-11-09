@@ -1,6 +1,6 @@
 import avatarUrl from '../assets/avatar.svg'
 
-import { buildContestStats } from '../services/codeforces/transformers'
+import { buildCardNumber, buildContestStats } from '../services/codeforces/transformers'
 import type {
   HardestProblem,
   HeatmapDay,
@@ -253,4 +253,15 @@ export const sampleProfile: Profile = {
   hardestProblem: hardestProblems[0],
   hardestProblems,
   submissionActivity: generateSampleSubmissionActivity(),
+  peakDay: { count: 8, date: '2026-08-15', partial: false },
+  grit: {
+    count: 12,
+    problemName: 'Amr and Points',
+    problemIndex: 'E',
+    partial: false,
+  },
+  contests: ratingHistory.length,
+  bestComeback: Math.max(...ratingHistory.map((point) => point.change)),
+  topTag: { tag: 'dp', solved: 148, partial: false },
+  cardNumber: buildCardNumber('chaudharibhavesh198'),
 }

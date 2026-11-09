@@ -2,11 +2,14 @@ import type {
   CodeforcesRank,
   ContestStats,
   DifficultyBucket,
+  GritStat,
   HardestProblem,
   HeatmapDay,
+  PeakDayStat,
   Profile,
   RatingPoint,
   SubmissionActivity,
+  TopTagStat,
   TopicStat,
 } from '../../types/profile'
 import { toCodeforcesAvatarUrl } from './avatar'
@@ -94,6 +97,19 @@ function problemUrl(contestId: number | null, index: string): string | null {
 }
 
 /**
+ * Stable identity for a problem across contest and practice submissions.
+ * Codeforces keeps the original contest id on practice submissions, so the
+ * contest + index pair is enough to deduplicate them.
+ */
+function submissionProblemKey(submission: CodeforcesSubmission): string {
+  const problem = submission.problem
+  const contestId =
+    typeof problem.contestId === 'number' ? problem.contestId : null
+  const contestKey = contestId ?? problem.problemsetName ?? 'unknown-contest'
+  return `${contestKey}:${problem.index}`
+}
+
+/**
  * Counts unique accepted problems by contestId + problem index. A problem is
  * only counted once no matter how many times it was accepted.
  */
@@ -108,8 +124,7 @@ export function collectSolvedProblems(
     const problem = submission.problem
     const contestId =
       typeof problem.contestId === 'number' ? problem.contestId : null
-    const contestKey = contestId ?? problem.problemsetName ?? 'unknown-contest'
-    const key = `${contestKey}:${problem.index}`
+    const key = submissionProblemKey(submission)
 
     if (solved.has(key)) continue
 
@@ -279,6 +294,163 @@ export function buildSubmissionActivity(
 }
 
 
+/**
+ * Highest number of distinct problems first accepted on a single local day.
+ * The earliest accepted submission per problem defines that day, so a later
+ * re-solve never moves the problem to another date. Ties keep the earliest day.
+ */
+export function buildPeakDay(
+  submissions: CodeforcesSubmission[],
+  partial: boolean,
+): PeakDayStat {
+  const firstSolveSeconds = new Map<string, number>()
+
+  for (const submission of submissions) {
+    if (submission.verdict !== 'OK') continue
+    const key = submissionProblemKey(submission)
+    const existing = firstSolveSeconds.get(key)
+    if (
+      existing === undefined ||
+      submission.creationTimeSeconds < existing
+    ) {
+      firstSolveSeconds.set(key, submission.creationTimeSeconds)
+    }
+  }
+
+  const counts = new Map<string, number>()
+  for (const seconds of firstSolveSeconds.values()) {
+    const date = toLocalIsoDate(new Date(seconds * 1000))
+    counts.set(date, (counts.get(date) ?? 0) + 1)
+  }
+
+  let bestDate: string | null = null
+  let bestCount = 0
+  for (const date of [...counts.keys()].sort()) {
+    const count = counts.get(date) ?? 0
+    if (count > bestCount) {
+      bestCount = count
+      bestDate = date
+    }
+  }
+
+  return { count: bestCount, date: bestDate, partial }
+}
+
+/**
+ * Compilation errors, TESTING and SKIPPED are not treated as failed attempts:
+ * they either never reached the judge or say nothing about the solution. Every
+ * other non-OK verdict before the first OK counts toward grit.
+ */
+const GRIT_IGNORED_VERDICTS = new Set([
+  'COMPILATION_ERROR',
+  'TESTING',
+  'SKIPPED',
+])
+
+/**
+ * Among problems that were eventually solved, the largest number of non-OK
+ * submissions before the first accepted one. Submissions for the same problem
+ * from a contest and later practice are grouped together by problem key.
+ */
+export function buildGrit(
+  submissions: CodeforcesSubmission[],
+  partial: boolean,
+): GritStat {
+  const byProblem = new Map<string, CodeforcesSubmission[]>()
+
+  for (const submission of submissions) {
+    const key = submissionProblemKey(submission)
+    const group = byProblem.get(key)
+    if (group) group.push(submission)
+    else byProblem.set(key, [submission])
+  }
+
+  let best: GritStat = {
+    count: 0,
+    problemName: null,
+    problemIndex: null,
+    partial,
+  }
+  let bestKey: string | null = null
+
+  for (const [key, group] of byProblem) {
+    const ordered = [...group].sort(
+      (a, b) => a.creationTimeSeconds - b.creationTimeSeconds,
+    )
+    const firstOk = ordered.findIndex(
+      (submission) => submission.verdict === 'OK',
+    )
+    if (firstOk === -1) continue
+
+    const failures = ordered
+      .slice(0, firstOk)
+      .filter(
+        (submission) =>
+          !GRIT_IGNORED_VERDICTS.has(submission.verdict ?? ''),
+      ).length
+
+    const better =
+      failures > best.count ||
+      (failures === best.count &&
+        failures > 0 &&
+        (bestKey === null || key < bestKey))
+
+    if (better) {
+      best = {
+        count: failures,
+        problemName: ordered[firstOk].problem.name,
+        problemIndex: ordered[firstOk].problem.index,
+        partial,
+      }
+      bestKey = key
+    }
+  }
+
+  return best
+}
+
+/** Human label for a grit count. Returns null below the first threshold. */
+export function gritLabel(count: number): string | null {
+  if (count >= 20) return 'Absolute menace'
+  if (count >= 10) return 'Built different'
+  if (count >= 5) return 'Stubborn'
+  return null
+}
+
+/** Most-solved tag, using the already-ranked topic data. */
+export function buildTopTag(
+  topics: TopicStat[],
+  partial: boolean,
+): TopTagStat | null {
+  let best: TopicStat | null = null
+
+  for (const topic of topics) {
+    if (
+      !best ||
+      topic.solved > best.solved ||
+      (topic.solved === best.solved && topic.tag.localeCompare(best.tag) < 0)
+    ) {
+      best = topic
+    }
+  }
+
+  if (!best) return null
+  return { tag: best.tag, solved: best.solved, partial }
+}
+
+/**
+ * Stable four-digit card number derived from the handle. FNV-1a keeps it
+ * deterministic across sessions and machines, unlike a random id.
+ */
+export function buildCardNumber(handle: string): number {
+  let hash = 0x811c9dc5
+  for (let index = 0; index < handle.length; index += 1) {
+    hash ^= handle.charCodeAt(index)
+    hash = Math.imul(hash, 0x01000193)
+  }
+  return ((hash >>> 0) % 9000) + 1000
+}
+
 interface DifficultyBand {
   label: string
   min: number
@@ -376,9 +548,19 @@ export function transformProfile({
     (problem) => problem.rating === null,
   ).length
   const hardestProblems = buildHardestProblems(solved)
+  const topics = submissions ? buildTopics(solved) : []
   const submissionActivity = submissions
     ? buildSubmissionActivity(submissions, submissionsTruncated)
     : null
+  const peakDay = buildPeakDay(
+    submissions ?? [],
+    submissionsTruncated,
+  )
+  const grit = buildGrit(submissions ?? [], submissionsTruncated)
+  const bestComeback =
+    ratingHistory.length > 0
+      ? Math.max(...ratingHistory.map((point) => point.change))
+      : null
 
   const localWarnings = [...warnings]
 
@@ -420,8 +602,14 @@ export function transformProfile({
     ratingHistory,
     difficulty: submissions ? buildDifficulty(solved) : [],
     contestStats: rating ? buildContestStats(ratingHistory) : null,
-    topics: submissions ? buildTopics(solved) : [],
+    topics,
     submissionActivity,
+    peakDay,
+    grit,
+    contests: ratingHistory.length,
+    bestComeback,
+    topTag: buildTopTag(topics, submissionsTruncated),
+    cardNumber: buildCardNumber(user.handle),
     hardestProblem: hardestProblems[0] ?? null,
     hardestProblems,
     ratingHistoryAvailable: rating !== null,

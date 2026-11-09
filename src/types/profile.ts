@@ -85,6 +85,33 @@ export interface SubmissionActivity {
   isPartial: boolean
 }
 
+export interface PeakDayStat {
+  /** Highest number of distinct problems first accepted on one local day. */
+  count: number
+  /** Local ISO date (YYYY-MM-DD) of that day, or null when nothing was solved. */
+  date: string | null
+  /** True when the submission history was capped by the API pagination limit. */
+  partial: boolean
+}
+
+export interface GritStat {
+  /** Most non-OK attempts before the first accepted submission on one problem. */
+  count: number
+  /** Name of the problem that needed the most failed attempts. */
+  problemName: string | null
+  /** Problem index (e.g. "C") for `problemName`. */
+  problemIndex: string | null
+  /** True when the submission history was capped by the API pagination limit. */
+  partial: boolean
+}
+
+export interface TopTagStat {
+  tag: string
+  solved: number
+  /** True when the submission history was capped by the API pagination limit. */
+  partial: boolean
+}
+
 export interface HardestProblem {
   key: string
   contestId: number | null
@@ -122,6 +149,12 @@ export interface Profile {
   contestStats: ContestStats | null
   topics: TopicStat[]
   submissionActivity: SubmissionActivity | null
+  peakDay: PeakDayStat
+  grit: GritStat
+  contests: number
+  bestComeback: number | null
+  topTag: TopTagStat | null
+  cardNumber: number
   hardestProblem: HardestProblem | null
   hardestProblems: HardestProblem[]
   ratingHistoryAvailable: boolean
