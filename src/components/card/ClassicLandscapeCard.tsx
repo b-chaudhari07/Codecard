@@ -16,7 +16,6 @@ import {
   CARD_THEMES,
   mixHex,
   resolveAccent,
-  resolveRankAccent,
   withAlpha,
 } from '../../lib/cardThemes'
 import { resolveDesignation } from '../../lib/designation'
@@ -53,15 +52,8 @@ export const ClassicLandscapeCard = forwardRef<
     const template = getTemplate('classic')
     const theme = CARD_THEMES[options.theme]
     const isDark = theme.mode === 'dark'
-    const accent = resolveAccent(
-      theme,
-      options.accent,
-      options.autoRankColor,
-      profile.rank,
-      options.customAccent,
-    )
-    const rankColor =
-      resolveRankAccent(profile.rank, theme.mode) ?? accent
+    const accent = resolveAccent(theme, profile.rank)
+    const rankColor = accent
     const accentSoft = withAlpha(accent, isDark ? 0.15 : 0.11)
     const accentBorder = withAlpha(accent, isDark ? 0.32 : 0.24)
     const heroShadow = isDark

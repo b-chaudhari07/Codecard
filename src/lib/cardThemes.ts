@@ -1,5 +1,4 @@
 import type {
-  AccentId,
   CardOptions,
   CardThemeId,
   CodeforcesRank,
@@ -30,15 +29,6 @@ export interface CardTheme {
   surfaceGradient: string | null
   surfaceShadow: string
   insetHighlight: string
-  signatureAccent: AccentId
-}
-
-export interface Accent {
-  name: string
-  /** Accent for dark surfaces. */
-  value: string
-  /** Darker accent that keeps contrast on light surfaces. */
-  onLight: string
 }
 
 export const CARD_THEMES: Record<CardThemeId, CardTheme> = {
@@ -64,7 +54,6 @@ export const CARD_THEMES: Record<CardThemeId, CardTheme> = {
       'linear-gradient(135deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.025) 38%, rgba(255,255,255,0.055) 100%)',
     surfaceShadow: '0 24px 60px rgba(0, 0, 0, 0.42)',
     insetHighlight: 'inset 0 1px 0 rgba(255,255,255,0.14)',
-    signatureAccent: 'emerald',
   },
   minimal: {
     id: 'minimal',
@@ -88,56 +77,12 @@ export const CARD_THEMES: Record<CardThemeId, CardTheme> = {
       'linear-gradient(135deg, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0.55) 55%, rgba(255,255,255,0.82) 100%)',
     surfaceShadow: '0 20px 50px rgba(23, 23, 29, 0.10)',
     insetHighlight: 'inset 0 1px 0 rgba(255,255,255,0.9)',
-    signatureAccent: 'lavender',
-  },
-}
-
-export const ACCENTS: Record<AccentId, Accent> = {
-  lavender: {
-    name: 'Lavender',
-    value: '#B9A7FF',
-    onLight: '#6D5BD0',
-  },
-  sapphire: {
-    name: 'Sapphire',
-    value: '#6AA8FF',
-    onLight: '#2563C9',
-  },
-  gold: {
-    name: 'Gold',
-    value: '#D7B45E',
-    onLight: '#9A7420',
-  },
-  emerald: {
-    name: 'Emerald',
-    value: '#5FD0A0',
-    onLight: '#1F8A5B',
-  },
-  rose: {
-    name: 'Rose',
-    value: '#F08A9B',
-    onLight: '#C2455C',
-  },
-  violet: {
-    name: 'Violet',
-    value: '#A78BFA',
-    onLight: '#7C3AED',
-  },
-  amber: {
-    name: 'Amber',
-    value: '#F5B94A',
-    onLight: '#B7791F',
-  },
-  cyan: {
-    name: 'Cyan',
-    value: '#5FE0E8',
-    onLight: '#0E8C96',
   },
 }
 
 /**
  * Rank colours are tuned separately for dark and light surfaces so the rank
- * accent stays legible without changing the user's manual accent choice.
+ * accent stays legible in both themes.
  */
 export const RANK_ACCENTS: Record<
   CodeforcesRank,
@@ -210,62 +155,29 @@ export function hasInnerGlow(rank: CodeforcesRank | null): boolean {
 }
 
 export const THEME_IDS: CardThemeId[] = ['obsidian', 'minimal']
-export const ACCENT_IDS: AccentId[] = [
-  'emerald',
-  'sapphire',
-  'violet',
-  'rose',
-  'amber',
-  'cyan',
-  'lavender',
-  'gold',
-]
 
+/** Rank colour for a surface mode; unrated profiles use the Newbie colour. */
 export function resolveRankAccent(
   rank: CodeforcesRank | null,
   mode: ThemeMode,
-): string | null {
-  if (!rank) return null
-  return mode === 'light' ? RANK_ACCENTS[rank].light : RANK_ACCENTS[rank].dark
+): string {
+  const resolved = rank ?? 'Newbie'
+  return mode === 'light' ? RANK_ACCENTS[resolved].light : RANK_ACCENTS[resolved].dark
 }
 
-/**
- * Resolves the colour used for accents on a surface with the given mode.
- * Manual accent selection is preserved in `CardOptions`; rank colouring only
- * changes the resolved value.
- */
+/** The card always uses the rank colour, tuned for the given surface mode. */
 export function resolveAccentForMode(
   mode: ThemeMode,
-  accentId: AccentId,
-  autoRankColor: boolean,
   rank: CodeforcesRank | null,
 ): string {
-  if (autoRankColor) {
-    const rankAccent = resolveRankAccent(rank, mode)
-    if (rankAccent) return rankAccent
-  }
-
-  return mode === 'light' ? ACCENTS[accentId].onLight : ACCENTS[accentId].value
+  return resolveRankAccent(rank, mode)
 }
 
 export function resolveAccent(
   theme: CardTheme,
-  accentId: AccentId,
-  autoRankColor: boolean,
   rank: CodeforcesRank | null,
-  customAccent: string | null = null,
 ): string {
-  if (autoRankColor) {
-    const rankAccent = resolveRankAccent(rank, theme.mode)
-    if (rankAccent) return rankAccent
-  }
-
-  const custom = normalizeHex(customAccent)
-  if (custom) {
-    return theme.mode === 'light' ? mixHex(custom, '#000000', 0.16) : custom
-  }
-
-  return resolveAccentForMode(theme.mode, accentId, false, rank)
+  return resolveRankAccent(rank, theme.mode)
 }
 
 function parseHex(hex: string): [number, number, number] | null {
@@ -284,15 +196,6 @@ function parseHex(hex: string): [number, number, number] | null {
   const b = Number.parseInt(value.slice(4, 6), 16)
   if ([r, g, b].some((channel) => Number.isNaN(channel))) return null
   return [r, g, b]
-}
-
-export function normalizeHex(hex: string | null | undefined): string | null {
-  if (!hex) return null
-  const parsed = parseHex(hex)
-  if (!parsed) return null
-  return `#${parsed
-    .map((channel) => channel.toString(16).padStart(2, '0'))
-    .join('')}`
 }
 
 /** Adds an alpha channel to a hex colour. */
@@ -320,9 +223,6 @@ export function mixHex(hex: string, target: string, amount: number): string {
 export const DEFAULT_CARD_OPTIONS: CardOptions = {
   template: 'portrait',
   theme: 'obsidian',
-  accent: 'emerald',
-  autoRankColor: true,
-  customAccent: null,
   designationMode: 'auto',
   customDesignation: '',
   customQuote: '',

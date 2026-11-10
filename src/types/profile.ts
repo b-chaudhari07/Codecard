@@ -180,16 +180,6 @@ export type RatingRange = '1M' | '6M' | '1Y' | 'ALL'
 
 export type CardThemeId = 'obsidian' | 'minimal'
 
-export type AccentId =
-  | 'lavender'
-  | 'sapphire'
-  | 'gold'
-  | 'emerald'
-  | 'rose'
-  | 'violet'
-  | 'amber'
-  | 'cyan'
-
 export type DesignationMode = 'auto' | 'custom'
 
 export type BannerPosition = 'top' | 'center' | 'bottom'
@@ -208,11 +198,6 @@ export type StatId =
 export interface CardOptions {
   template: TemplateId
   theme: CardThemeId
-  accent: AccentId
-  /** Use the Codeforces rank colour instead of the manual accent. */
-  autoRankColor: boolean
-  /** Optional user-picked accent. Takes precedence when rank colour is off. */
-  customAccent: string | null
   /** Automatically generated tagline, or the user's own designation. */
   designationMode: DesignationMode
   customDesignation: string

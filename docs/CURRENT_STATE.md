@@ -27,7 +27,6 @@ Ambient rank glow → banner (optional `showBanner`, `customBanner`, `bannerPosi
 - Header: Reset button (calls CardStudio onReset: defaults from memory and clears localStorage).
 - Template: grid of 5 template buttons (labels, aspect, dimensions, "Soon" badge still exists for `available: false` — currently none).
 - Theme: obsidian / minimal previews.
-- Accent: 8 swatches, custom colour picker, "Rank colour" toggle (`autoRankColor`, shows resolved rank accent).
 - Banner: "Cinematic banner" toggle, upload button (image MIME, 6 MB, inline error 3), Remove, Crop position (top/center/bottom).
 - Profile photo: "Upload photo" (same checks) + Reset (only when custom set), avatar preview, inline error, mode caption.
 - Personal quote: toggle + 90-char input.
@@ -58,13 +57,13 @@ Ambient rank glow → banner (optional `showBanner`, `customBanner`, `bannerPosi
 - `avatarUrl`/`avatarDataUrl`: CF avatar URL / fetched data URL avatar; `initials`: from names.
 
 ## 6. Persistence (`lib/cardOptionsStorage.ts`)
-- localStorage key `codecard.card-options.v1`, payload `{ version: 1, options }`; written on every card-options change via an `App` effect.
-- Migration fills unknown keys from `DEFAULT_CARD_OPTIONS`, repairs stats (`sanitizeStats`: unknown ids/dedupes to exactly 6 slots), uses `normalizeHex` to validate `customAccent`.
+- localStorage key `codecard.card-options.v1`, payload `{ version: 2, options }`; written on every card-options change via an `App` effect.
+- Migration fills unknown keys from `DEFAULT_CARD_OPTIONS`, repairs stats (`sanitizeStats`: unknown ids/dedupes to exactly 6 slots), and strips legacy `accent` / `customAccent` / `autoRankColor` keys. Version 1 payloads are ignored.
 - `clearCardOptions` used in the customizer's Reset path (in `CardStudio.tsx`).
 - Data URLs for `customPhoto` / `customBanner` larger than 1 MB are excluded from storage (kept in memory only); failing `setItem` retries without the data URLs, then silently gives up. App theme uses a separate `localStorage` key (`lib/appTheme.ts`).
 
 ## 7. Plan checklist (done / partial / missing)
-- DONE: rarity from rank in `cardThemes.ts` + portrait rarity pill; foil (Expert+) and inset glow (Master+); single rank-colour source (`RANK_ACCENTS`, `rankAccent()` reads dark variant); stat-picker registry + customizer + substitution + tests; versioned persistence with migration; story/link/print layouts; minimal-theme `heatmapEmpty` fix (`#E3E7EC`); photo upload/reset; classic tagline toggle.
+- DONE: rarity from rank in `cardThemes.ts` + portrait rarity pill; foil (Expert+) and inset glow (Master+); rank colour is the single card accent (`RANK_ACCENTS`, dark/light variants, Newbie fallback for unrated); stat-picker registry + customizer + substitution + tests; versioned persistence with migration; story/link/print layouts; minimal-theme `heatmapEmpty` fix (`#E3E7EC`); photo upload/reset; classic tagline toggle.
 - PARTIAL: CardStudio reset behavior already does memory defaults and clears saved custom options, but has no dedicated "Reset card" labelled control outside the Reset button; export has defaults per template but no scale choices.
 - MISSING: export service extraction (`cards/export/`) and options, JPEG/WebP modes, 1x–4x scales, 4000px/16 MP warning and cap, Export section, "-front" filename scheme, card back, front/back toggle, print sheet.
 

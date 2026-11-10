@@ -1,10 +1,10 @@
 import { DEFAULT_STATS, sanitizeStats } from './cardStats'
-import { DEFAULT_CARD_OPTIONS, normalizeHex } from './cardThemes'
+import { DEFAULT_CARD_OPTIONS } from './cardThemes'
 import type { CardOptions, StatId } from '../types/profile'
 
 const OPTIONS_STORAGE_KEY = 'codecard.card-options.v1'
 /** On-disk version for the options payload; migrations key off this. */
-const OPTIONS_STORAGE_VERSION = 1
+const OPTIONS_STORAGE_VERSION = 2
 /** Data URLs larger than this stay in memory only. */
 const MAX_PERSISTED_DATA_URL_BYTES = 1024 * 1024
 
@@ -48,7 +48,12 @@ export function migrateCardOptions(
   if (!stored || typeof stored !== 'object') {
     return { ...defaults }
   }
-  const partial = stored as Partial<CardOptions>
+  // Strip fields removed in v2 so legacy payloads never leak them back in.
+  const clean: Record<string, unknown> = { ...(stored as Record<string, unknown>) }
+  delete clean.accent
+  delete clean.customAccent
+  delete clean.autoRankColor
+  const partial = clean as Partial<CardOptions>
   const stats = sanitizeStats(
     Array.isArray(partial.stats) ? (partial.stats as StatId[]) : null,
   )
@@ -58,7 +63,6 @@ export function migrateCardOptions(
     stats: stats.length > 0 ? stats : [...DEFAULT_STATS],
     customPhoto: partial.customPhoto ?? null,
     customBanner: partial.customBanner ?? null,
-    customAccent: normalizeHex(partial.customAccent ?? null),
   }
 }
 

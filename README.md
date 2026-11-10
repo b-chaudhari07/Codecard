@@ -85,14 +85,12 @@ layout:
   surfaces and soft shadows. The heatmap's zero-activity cells use a light
   neutral (`#E3E7EC`) while the obsidian theme keeps its dark green cells.
 
-## Accents and rank colour
+## Rank colour
 
-Eight accents are available in both themes (each with a darker variant for the
-light theme). **Rank colour is on by default**: the card, rarity pill, glows and
-foil use the official Codeforces colour for the profile's rank (also derived for
-unrated profiles via the manual accent). Turning it off restores the manual
-accent; picking an accent disables rank colouring so the choice is visible
-immediately.
+The card always uses the official Codeforces colour for the profile's rank,
+with separate dark- and light-theme variants. Rarity pill, glows, heatmap tint
+and foil all follow it, so there is no manual accent setting. Unrated profiles
+use the Newbie colour.
 
 ## Rarity and foil
 

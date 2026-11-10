@@ -16,13 +16,8 @@ import {
 
 import bannerUrl from '../../assets/anime-banner.svg'
 import {
-  ACCENTS,
-  ACCENT_IDS,
   CARD_THEMES,
   THEME_IDS,
-  normalizeHex,
-  resolveAccent,
-  resolveRankAccent,
 } from '../../lib/cardThemes'
 import type { CardTheme } from '../../lib/cardThemes'
 import { TEMPLATES, TEMPLATE_IDS, getTemplate } from '../../lib/cardTemplates'
@@ -35,7 +30,6 @@ import {
 } from '../../lib/cardStats'
 import { cn } from '../../lib/utils'
 import type {
-  AccentId,
   BannerPosition,
   CardOptions,
   Profile,
@@ -116,10 +110,7 @@ function Toggle({
 }
 
 function ThemePreview({ theme }: { theme: CardTheme }) {
-  const signature =
-    ACCENTS[theme.signatureAccent][
-      theme.mode === 'light' ? 'onLight' : 'value'
-    ]
+  const signature = theme.text
 
   return (
     <span
@@ -166,53 +157,6 @@ function ThemePreview({ theme }: { theme: CardTheme }) {
   )
 }
 
-function AccentSwatch({
-  accentId,
-  selected,
-  onSelect,
-}: {
-  accentId: AccentId
-  selected: boolean
-  onSelect: () => void
-}) {
-  const accent = ACCENTS[accentId]
-
-  return (
-    <button
-      type="button"
-      onClick={onSelect}
-      title={accent.name}
-      aria-label={`${accent.name} accent`}
-      aria-pressed={selected}
-      className="group flex flex-col items-center gap-1.5"
-    >
-      <span
-        className={cn(
-          'flex h-7 w-7 items-center justify-center rounded-full border transition-all duration-200',
-          selected
-            ? 'scale-110 border-silver/50 ring-2 ring-silver/20'
-            : 'border-transparent group-hover:scale-105',
-        )}
-      >
-        <span
-          className="h-4.5 w-4.5 rounded-full"
-          style={{
-            backgroundColor: accent.value,
-          }}
-        />
-      </span>
-      <span
-        className={cn(
-          'text-[9px] transition-colors',
-          selected ? 'font-medium text-silver' : 'text-muted/70',
-        )}
-      >
-        {accent.name}
-      </span>
-    </button>
-  )
-}
-
 export function CardCustomizer({
   profile,
   options,
@@ -235,20 +179,7 @@ export function CardCustomizer({
   const update = (patch: Partial<CardOptions>) =>
     onChange({ ...options, ...patch })
 
-  const theme = CARD_THEMES[options.theme]
   const activeTemplate = getTemplate(options.template)
-  const resolvedAccent = resolveAccent(
-    theme,
-    options.accent,
-    options.autoRankColor,
-    profile.rank,
-    options.customAccent,
-  )
-  const rankAccent =
-    resolveRankAccent(profile.rank, theme.mode) ?? resolvedAccent
-  const customColorValue =
-    normalizeHex(options.customAccent) ??
-    resolveAccent(theme, options.accent, false, null)
   const bannerPreview = options.customBanner ?? bannerUrl
   const photoPreview =
     options.customPhoto ?? profile.avatarDataUrl ?? profile.avatarUrl
@@ -263,8 +194,6 @@ export function CardCustomizer({
   const photoInputRef = useRef<HTMLInputElement>(null)
 
   const updateTheme = (themeId: CardOptions['theme']) => {
-    // Keep the user's accent across themes; the theme previews still advertise
-    // their signature colours, but switching never silently recolours a card.
     update({ theme: themeId })
   }
 
@@ -444,108 +373,6 @@ export function CardCustomizer({
               </button>
             )
           })}
-        </div>
-      </div>
-
-      {/* Accent selection */}
-      <div className="mt-5">
-        <div className="flex items-center justify-between">
-          <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-muted">
-            Accent
-          </p>
-          <span className="text-[10px] text-muted/70">
-            {options.autoRankColor && profile.rank
-              ? 'Rank colour active'
-              : options.customAccent
-                ? 'Custom colour'
-                : ACCENTS[options.accent].name}
-          </span>
-        </div>
-        <div className="mt-2.5 grid grid-cols-4 gap-x-1 gap-y-2">
-          {ACCENT_IDS.map((accentId) => (
-            <AccentSwatch
-              key={accentId}
-              accentId={accentId}
-              selected={
-                options.accent === accentId && !options.customAccent
-              }
-              onSelect={() =>
-                update({
-                  accent: accentId,
-                  customAccent: null,
-                  autoRankColor: false,
-                })
-              }
-            />
-          ))}
-        </div>
-        <div className="mt-3 flex items-center gap-2 rounded-xl border border-line bg-soft px-2.5 py-2">
-          <label
-            htmlFor="custom-accent"
-            className="flex h-6 w-6 cursor-pointer items-center justify-center rounded-full border border-line"
-            style={{ backgroundColor: customColorValue }}
-            title="Choose a custom accent colour"
-          >
-            <input
-              id="custom-accent"
-              type="color"
-              value={customColorValue}
-              onChange={(event) =>
-                update({
-                  customAccent: event.target.value,
-                  autoRankColor: false,
-                })
-              }
-              className="sr-only"
-            />
-          </label>
-          <div className="min-w-0 flex-1">
-            <p className="text-[10px] font-medium text-silver">Custom colour</p>
-            <p className="text-[9px] text-muted/60">
-              {options.customAccent
-                ? options.customAccent.toUpperCase()
-                : 'Pick any accent for the whole card'}
-            </p>
-          </div>
-          {options.customAccent ? (
-            <button
-              type="button"
-              onClick={() => update({ customAccent: null })}
-              className="rounded-full border border-line px-2 py-1 text-[9px] text-muted transition-colors hover:text-ink"
-            >
-              Clear
-            </button>
-          ) : null}
-        </div>
-      </div>
-
-      {/* Rank colour override */}
-      <div className="mt-4 border-t border-line pt-3.5">
-        <Toggle
-          label="Rank colour"
-          description={
-            profile.rank
-              ? `Use your ${profile.rank} rank colour`
-              : 'Unrated — manual accent is used'
-          }
-          checked={Boolean(profile.rank) && options.autoRankColor}
-          disabled={!profile.rank}
-          onChange={(checked) => update({ autoRankColor: checked })}
-        />
-        <div className="mt-1 flex items-center gap-2 rounded-lg border border-line bg-soft px-2.5 py-1.5">
-          <span
-            className="h-2 w-2 shrink-0 rounded-full"
-            style={{ backgroundColor: rankAccent }}
-          />
-          <span className="text-[10px] leading-relaxed text-muted/70">
-            {options.autoRankColor && profile.rank
-              ? 'Rank colour overrides accent on card.'
-              : 'Manual accent is active.'}
-          </span>
-          <span
-            className="ml-auto h-2 w-2 shrink-0 rounded-full"
-            style={{ backgroundColor: resolvedAccent }}
-          />
         </div>
       </div>
 

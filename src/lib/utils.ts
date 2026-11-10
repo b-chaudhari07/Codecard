@@ -84,8 +84,7 @@ export function filterRatingHistory(
 
 /** Dashboard rank colour, using the dark-surface variant. */
 export function rankAccent(rank: CodeforcesRank | null): string {
-  if (!rank) return '#C8D0DC'
-  return RANK_ACCENTS[rank].dark
+  return RANK_ACCENTS[rank ?? 'Newbie'].dark
 }
 
 export function formatMemberSince(profile: Profile): string {

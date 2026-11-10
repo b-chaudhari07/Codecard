@@ -12,7 +12,6 @@ import {
   hasInnerGlow,
   mixHex,
   resolveAccent,
-  resolveRankAccent,
   withAlpha,
 } from '../../lib/cardThemes'
 import type { CardTheme } from '../../lib/cardThemes'
@@ -240,14 +239,8 @@ export const PortraitCard = forwardRef<HTMLDivElement, PortraitCardProps>(
     const isDark = theme.mode === 'dark'
     const isLink = template.id === 'link'
     const isStory = template.id === 'story'
-    const accent = resolveAccent(
-      theme,
-      options.accent,
-      options.autoRankColor,
-      profile.rank,
-      options.customAccent,
-    )
-    const rankColor = resolveRankAccent(profile.rank, theme.mode) ?? accent
+    const accent = resolveAccent(theme, profile.rank)
+    const rankColor = accent
     const rarity = getRarity(profile.rank)
     const foil = hasFoil(profile.rank)
     const innerGlow = hasInnerGlow(profile.rank)

@@ -76,6 +76,19 @@ describe('migrateCardOptions', () => {
     expect(migrateCardOptions(null)).toEqual({ ...DEFAULT_CARD_OPTIONS })
     expect(migrateCardOptions('junk')).toEqual({ ...DEFAULT_CARD_OPTIONS })
   })
+
+  it('drops legacy accent fields during migration', () => {
+    const migrated = migrateCardOptions({
+      theme: 'minimal',
+      accent: 'rose',
+      customAccent: '#123456',
+      autoRankColor: false,
+    })
+    expect(migrated.theme).toBe('minimal')
+    expect(migrated).not.toHaveProperty('accent')
+    expect(migrated).not.toHaveProperty('customAccent')
+    expect(migrated).not.toHaveProperty('autoRankColor')
+  })
 })
 
 describe('loadCardOptions / persistCardOptions', () => {
@@ -92,6 +105,18 @@ describe('loadCardOptions / persistCardOptions', () => {
   it('falls back to defaults when nothing or invalid data is stored', () => {
     expect(loadCardOptions()).toEqual({ ...DEFAULT_CARD_OPTIONS })
     setStorage(makeLocalStorage({ 'codecard.card-options.v1': '{broken' }))
+    expect(loadCardOptions()).toEqual({ ...DEFAULT_CARD_OPTIONS })
+  })
+
+  it('ignores payloads saved with the previous options version', () => {
+    setStorage(
+      makeLocalStorage({
+        'codecard.card-options.v1': JSON.stringify({
+          version: 1,
+          options: { theme: 'minimal', accent: 'rose' },
+        }),
+      }),
+    )
     expect(loadCardOptions()).toEqual({ ...DEFAULT_CARD_OPTIONS })
   })
 

@@ -20,8 +20,6 @@ export function Analytics({ profile, cardOptions, appTheme, onSelectStat }: Anal
   const accentColor = cardOptions
     ? resolveAccentForMode(
         appTheme === 'light' ? 'light' : 'dark',
-        cardOptions.accent,
-        cardOptions.autoRankColor,
         profile.rank,
       )
     : undefined

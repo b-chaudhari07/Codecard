@@ -26,7 +26,7 @@ const SHOWCASE_OPTIONS: CardOptions = {
 const template = getTemplate('portrait')
 const previewWidth = template.width * PREVIEW_SCALE
 const previewHeight = template.height * PREVIEW_SCALE
-const rankColor = resolveRankAccent(sampleProfile.rank, 'dark') ?? '#6AA8FF'
+const rankColor = resolveRankAccent(sampleProfile.rank, 'dark')
 
 interface FlipCardProps {
   loading?: boolean
