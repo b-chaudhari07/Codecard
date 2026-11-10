@@ -75,6 +75,12 @@ function compactDate(iso: string): string {
   return `${MONTHS[date.getMonth()]} ${date.getDate()}`
 }
 
+/** Compact local month and year, e.g. "Aug 2023". */
+function compactMonthYear(iso: string): string {
+  const date = new Date(`${iso}T00:00:00`)
+  return `${MONTHS[date.getMonth()]} ${date.getFullYear()}`
+}
+
 const STAT_DEFINITIONS: StatDefinition[] = [
   {
     id: 'boss',
@@ -168,12 +174,17 @@ const STAT_DEFINITIONS: StatDefinition[] = [
       if (!profile.submissionsAvailable || !profile.submissionActivity) {
         return null
       }
-      const activeDays = profile.submissionActivity.windowActiveDays
-      if (activeDays <= 0) return null
+      const activity = profile.submissionActivity
+      if (activity.activeDays <= 0) return null
+      const since = activity.firstSubmissionDate
+        ? ` since ${compactMonthYear(activity.firstSubmissionDate)}`
+        : ''
       return {
-        value: formatNumber(activeDays),
-        caption: 'days with submissions',
-        partial: false,
+        value: formatNumber(activity.activeDays),
+        caption: `days with submissions${since}${
+          activity.isPartial ? ' (partial)' : ''
+        }`,
+        partial: activity.isPartial,
       }
     },
   },

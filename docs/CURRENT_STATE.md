@@ -50,7 +50,7 @@ Ambient rank glow → banner (optional `showBanner`, `customBanner`, `bannerPosi
 - `problemsSolved`: distinct handled problems ("OK" only) across contest/practice; `unratedSolved`: distinct solved without a rating; `ratedContests`: distinct rated contests.
 - `contestStats`: totals, best rank, avg/best/worst changes, positive/negative counts, recent — from rating history.
 - `topics`: count per tag of solved problems (strength vs. most-solved); `difficulty`: buckets of solved problems by rating (unrated excluded).
-- `submissionActivity`: last ~year of Sunday-aligned days with submissions/accepted counts, streaks, active days, max daily, `isPartial` when pagination-capped.
+- `submissionActivity`: `days` is the last ~year of Sunday-aligned submission/accepted counts for the heatmap; `activeDays`, `longestStreak` and `firstSubmissionDate` cover all retrieved submissions, while `window*` fields cover the heatmap window; `isPartial` is set when pagination-capped.
 - `peakDay`: most distinct problems first-accepted in one local day, with date and `partial`.
 - `grit`: most non-OK attempts before first AC on one problem, with problem name/index and `partial`.
 - `hardestProblem(s)`: highest-rated solved problems (rated only); `contests`: `ratingHistory.length` count; `bestComeback`: max single rating change (null if no history); `topTag`: most-solved tag; `cardNumber`: 1000–9999 from a FNV-1a hash of the handle.

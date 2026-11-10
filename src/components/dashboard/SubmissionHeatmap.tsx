@@ -153,7 +153,7 @@ export function SubmissionHeatmap({
         <div className="flex flex-wrap items-center gap-2 text-[11px]">
           <span className="inline-flex items-center gap-1.5 rounded-xl border border-line bg-soft px-3 py-1.5 font-medium text-silver">
             <CheckCircle2 size={13} className="text-positive" />
-            <strong className="text-ink">{formatNumber(activity.windowActiveDays)}</strong> active days
+            <strong className="text-ink">{formatNumber(activity.windowActiveDays)}</strong> active days (last 12 months)
           </span>
           <span className="inline-flex items-center gap-1.5 rounded-xl border border-line bg-soft px-3 py-1.5 font-medium text-silver">
             <Layers size={13} className="text-silver/70" />

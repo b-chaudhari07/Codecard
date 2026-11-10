@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import {
   buildGrit,
   buildPeakDay,
+  buildSubmissionActivity,
   collectSolvedProblems,
   gritLabel,
 } from './transformers'
@@ -97,6 +98,54 @@ describe('buildPeakDay', () => {
       date: null,
       partial: true,
     })
+  })
+})
+
+describe('buildSubmissionActivity', () => {
+  const now = new Date(2026, 10, 15, 12)
+  const submissions = [
+    // Same local day twice: counts once.
+    makeSubmission('OK', localSeconds(2023, 11, 20), 1000, 'A'),
+    makeSubmission('WRONG_ANSWER', localSeconds(2023, 11, 20) + 60, 1000, 'A'),
+    // Four-day run outside the heatmap window, with a two-problem peak.
+    makeSubmission('OK', localSeconds(2024, 6, 1), 1001, 'A'),
+    makeSubmission('OK', localSeconds(2024, 6, 2), 1001, 'B'),
+    makeSubmission('OK', localSeconds(2024, 6, 2) + 60, 1001, 'C'),
+    makeSubmission('OK', localSeconds(2024, 6, 3), 1001, 'D'),
+    makeSubmission('OK', localSeconds(2024, 6, 4), 1001, 'E'),
+    // Three active days inside the last twelve months.
+    makeSubmission('OK', localSeconds(2025, 12, 1), 1002, 'A'),
+    makeSubmission('OK', localSeconds(2026, 3, 1), 1003, 'A'),
+    makeSubmission('OK', localSeconds(2026, 11, 10), 1004, 'A'),
+  ]
+
+  const activity = buildSubmissionActivity(submissions, false, now)
+
+  it('counts distinct active days across all retrieved years', () => {
+    expect(activity.activeDays).toBe(8)
+  })
+
+  it('limits the heatmap window to the last twelve months', () => {
+    expect(activity.windowActiveDays).toBe(3)
+    expect(activity.windowStart).toBe('2025-11-09')
+    expect(activity.windowEnd).toBe('2026-11-15')
+  })
+
+  it('keeps streak and peak day on all retrieved submissions', () => {
+    expect(activity.longestStreak).toBe(4)
+    expect(buildPeakDay(submissions, false)).toEqual({
+      count: 2,
+      date: '2024-06-02',
+      partial: false,
+    })
+  })
+
+  it('records the earliest retrieved submission date', () => {
+    expect(activity.firstSubmissionDate).toBe('2023-11-20')
+  })
+
+  it('marks the activity partial when the history is truncated', () => {
+    expect(buildSubmissionActivity(submissions, true, now).isPartial).toBe(true)
   })
 })
 

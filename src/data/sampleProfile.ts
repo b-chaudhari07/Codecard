@@ -191,6 +191,8 @@ function generateSampleSubmissionActivity(): SubmissionActivity {
   return {
     days,
     activeDays,
+    firstSubmissionDate:
+      days.find((day) => day.submissions > 0)?.date ?? null,
     longestStreak,
     totalSubmissions,
     acceptedSubmissions,

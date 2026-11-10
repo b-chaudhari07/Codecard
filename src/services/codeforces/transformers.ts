@@ -235,11 +235,15 @@ export function buildSubmissionActivity(
 ): SubmissionActivity {
   const counts = new Map<string, DayCount>()
   let acceptedSubmissions = 0
+  let firstSubmissionDate: string | null = null
 
   for (const submission of submissions) {
     const date = toLocalIsoDate(
       new Date(submission.creationTimeSeconds * 1000),
     )
+    if (firstSubmissionDate === null || date < firstSubmissionDate) {
+      firstSubmissionDate = date
+    }
     const entry = counts.get(date) ?? { submissions: 0, accepted: 0 }
     entry.submissions += 1
     if (submission.verdict === 'OK') {
@@ -281,6 +285,7 @@ export function buildSubmissionActivity(
   return {
     days,
     activeDays: counts.size,
+    firstSubmissionDate,
     longestStreak: longestConsecutiveRun(counts.keys()),
     totalSubmissions: submissions.length,
     acceptedSubmissions,

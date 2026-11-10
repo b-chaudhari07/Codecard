@@ -65,6 +65,8 @@ export interface SubmissionActivity {
   days: HeatmapDay[]
   /** Distinct local calendar days with at least one submission (all history). */
   activeDays: number
+  /** Earliest local calendar day with a retrieved submission, or null. */
+  firstSubmissionDate: string | null
   /** Longest run of consecutive local calendar days with a submission. */
   longestStreak: number
   /** Submissions in the retrieved history. */

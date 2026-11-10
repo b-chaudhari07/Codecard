@@ -50,6 +50,7 @@ describe('selectStats', () => {
       submissionActivity: {
         days: [],
         activeDays: 4,
+        firstSubmissionDate: '2026-01-01',
         longestStreak: 3,
         totalSubmissions: 40,
         acceptedSubmissions: 30,
@@ -73,6 +74,59 @@ describe('selectStats', () => {
     expect(tiles[1].value).toBe('3')
   })
 
+  it('uses all-history active days for the card tile', () => {
+    const profile = makeProfile({
+      submissionActivity: {
+        days: [],
+        activeDays: 320,
+        firstSubmissionDate: '2020-05-04',
+        longestStreak: 10,
+        totalSubmissions: 4000,
+        acceptedSubmissions: 3000,
+        windowSubmissions: 400,
+        windowAcceptedSubmissions: 300,
+        windowActiveDays: 22,
+        maxDailySubmissions: 12,
+        windowStart: '2025-11-09',
+        windowEnd: '2026-11-15',
+        isPartial: false,
+      },
+    })
+
+    const tile = selectStats(profile, ['activeDays']).find(
+      (item) => item.id === 'activeDays',
+    )
+    expect(tile?.value).toBe('320')
+    expect(tile?.caption).toBe('days with submissions since May 2020')
+  })
+
+  it('marks a truncated active-days caption as partial', () => {
+    const profile = makeProfile({
+      submissionActivity: {
+        days: [],
+        activeDays: 500,
+        firstSubmissionDate: '2018-01-15',
+        longestStreak: 10,
+        totalSubmissions: 30000,
+        acceptedSubmissions: 20000,
+        windowSubmissions: 400,
+        windowAcceptedSubmissions: 300,
+        windowActiveDays: 32,
+        maxDailySubmissions: 12,
+        windowStart: '2025-11-09',
+        windowEnd: '2026-11-15',
+        isPartial: true,
+      },
+    })
+
+    const tile = selectStats(profile, ['activeDays']).find(
+      (item) => item.id === 'activeDays',
+    )
+    expect(tile?.caption).toBe(
+      'days with submissions since Jan 2018 (partial) ~',
+    )
+  })
+
   it('appends a trailing ~ to partial captions', () => {
     const profile = makeProfile({
       peakDay: { count: 7, date: '2026-08-15', partial: true },
@@ -87,6 +141,7 @@ describe('selectStats', () => {
       submissionActivity: {
         days: [],
         activeDays: 2,
+        firstSubmissionDate: '2026-01-01',
         longestStreak: 1,
         totalSubmissions: 5,
         acceptedSubmissions: 4,
@@ -133,6 +188,7 @@ describe('selectStats', () => {
       submissionActivity: {
         days: [],
         activeDays: 1,
+        firstSubmissionDate: '2026-01-01',
         longestStreak: 1,
         totalSubmissions: 2,
         acceptedSubmissions: 2,
