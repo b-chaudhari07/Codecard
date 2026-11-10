@@ -2,25 +2,30 @@ import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { ArrowRight, Loader2, Search, Sparkles } from 'lucide-react'
 
+import { FlipCard } from './FlipCard'
 import { CodeforcesMark } from '../ui/CodeforcesMark'
+import { ProfileLoadingState } from '../dashboard/ProfileStates'
 import { cn } from '../../lib/utils'
 import { isValidHandle } from '../../lib/routing'
+import type { ProfileFetchStage } from '../../hooks/useCodeforcesProfile'
 
-interface HeroProps {
+interface LandingHeroProps {
   onSearch: (handle: string) => void
+  onSeeExample: () => void
   isLoading: boolean
-  isDemo: boolean
-  hasError: boolean
+  stage: ProfileFetchStage | null
   activeHandle: string | null
+  compact?: boolean
 }
 
-export function Hero({
+export function LandingHero({
   onSearch,
+  onSeeExample,
   isLoading,
-  isDemo,
-  hasError,
+  stage,
   activeHandle,
-}: HeroProps) {
+  compact = false,
+}: LandingHeroProps) {
   const [value, setValue] = useState('')
   const [error, setError] = useState<string | null>(null)
 
@@ -43,32 +48,53 @@ export function Hero({
   }
 
   return (
-    <section id="top" className="relative pt-16 sm:pt-24">
+    <section
+      id="top"
+      className={cn('relative', compact ? 'pt-8 sm:pt-10' : 'pt-16 sm:pt-24')}
+    >
       <div className="section-shell">
-        <div className="mx-auto max-w-3xl text-center">
-          <div className="animate-fade-up inline-flex items-center gap-2 rounded-full border border-line bg-widget/70 px-3.5 py-1.5 text-[11px] text-muted backdrop-blur">
-            <Sparkles size={12} className="text-gold" />
-            Codeforces profile analytics, refined
-            <span className="h-1 w-1 rounded-full bg-line" />
-            <span className="text-silver/80">Beta</span>
-          </div>
+        <div
+          className={cn(
+            'mx-auto text-center transition-all duration-300',
+            compact ? 'max-w-2xl' : 'max-w-3xl',
+          )}
+        >
+          {!compact ? (
+            <div className="animate-fade-up inline-flex items-center gap-2 rounded-full border border-line bg-widget/70 px-3.5 py-1.5 text-[11px] text-muted backdrop-blur">
+              <Sparkles size={12} className="text-gold" />
+              Codeforces profile cards
+              <span className="h-1 w-1 rounded-full bg-line" />
+              <span className="text-silver/80">Beta</span>
+            </div>
+          ) : null}
 
-          <h1 className="animate-fade-up mt-7 text-[44px] font-semibold leading-[1.03] tracking-[-0.045em] text-ink [animation-delay:80ms] sm:text-6xl lg:text-[76px]">
-            Your Codeforces,
-            <br />
-            <span className="bg-gradient-to-r from-silver via-ink to-silver bg-clip-text text-transparent">
-              visualized.
+          <h1
+            className={cn(
+              'font-semibold tracking-[-0.045em] text-ink',
+              compact
+                ? 'animate-fade-in text-2xl leading-tight sm:text-3xl'
+                : 'animate-fade-up mt-7 text-[44px] leading-[1.03] sm:text-6xl lg:text-[76px]',
+            )}
+          >
+            Your card.{' '}
+            <span className={compact ? 'text-silver' : 'text-muted'}>
+              Your identity.
             </span>
           </h1>
 
-          <p className="animate-fade-up mx-auto mt-6 max-w-xl text-base leading-relaxed text-muted [animation-delay:140ms] sm:text-lg">
-            Your competitive programming journey deserves more than just
-            numbers.
-          </p>
+          {!compact ? (
+            <p className="animate-fade-up mx-auto mt-6 max-w-xl text-base leading-relaxed text-muted [animation-delay:140ms] sm:text-lg">
+              Turn your Codeforces profile into a collectible card worth
+              sharing.
+            </p>
+          ) : null}
 
           <form
             onSubmit={handleSubmit}
-            className="animate-fade-up mx-auto mt-10 max-w-xl [animation-delay:200ms]"
+            className={cn(
+              'animate-fade-up mx-auto [animation-delay:200ms]',
+              compact ? 'mt-4 max-w-xl' : 'mt-10 max-w-xl',
+            )}
             noValidate
           >
             <div
@@ -128,30 +154,41 @@ export function Hero({
                   Fetching live data from Codeforces. This can take a few
                   seconds.
                 </p>
-              ) : !isDemo && !hasError && activeHandle ? (
-                <p className="animate-fade-in flex items-center gap-1.5 text-xs text-positive">
-                  <span className="h-1 w-1 rounded-full bg-positive" />
-                  Live profile loaded for @{activeHandle}
-                </p>
               ) : null}
             </div>
           </form>
 
-          <div className="animate-fade-up mt-2 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-[11px] text-muted/70 [animation-delay:260ms]">
-            <span className="inline-flex items-center gap-1.5">
-              <span
-                className={cn(
-                  'h-1.5 w-1.5 rounded-full',
-                  isDemo ? 'bg-gold/80' : 'bg-positive/80',
-                )}
-              />
-              {isDemo ? 'Demo mode · sample statistics' : 'Live · Codeforces API'}
-            </span>
-            <span className="hidden h-3 w-px bg-line sm:block" />
-            <span>No login required</span>
-            <span className="hidden h-3 w-px bg-line sm:block" />
-            <span>PNG export included</span>
-          </div>
+          {!compact ? (
+            <>
+              <div className="animate-fade-up mt-1 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-[11px] text-muted/70 [animation-delay:260ms]">
+                <span>No login</span>
+                <span className="h-1 w-1 rounded-full bg-line" />
+                <span>Free</span>
+                <span className="h-1 w-1 rounded-full bg-line" />
+                <span>PNG export</span>
+              </div>
+
+              <button
+                type="button"
+                onClick={onSeeExample}
+                className="animate-fade-up mt-5 text-[12px] font-medium text-silver underline-offset-4 transition-colors hover:text-ink hover:underline [animation-delay:300ms]"
+              >
+                See an example
+              </button>
+
+              {isLoading ? (
+                <ProfileLoadingState
+                  handle={activeHandle}
+                  stage={stage}
+                  compact
+                />
+              ) : null}
+
+              <div className="animate-fade-up mt-8 [animation-delay:360ms]">
+                <FlipCard loading={isLoading} />
+              </div>
+            </>
+          ) : null}
         </div>
       </div>
     </section>

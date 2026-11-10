@@ -1,6 +1,15 @@
 # Codecard — Current State (branch `card-2.0`)
 
-Status verified from code only; current test suite has 49 tests. Build, lint, and tests are run for the current change.
+Status verified from code only; current test suite has 58 tests. Build, lint, and tests are run for the current change.
+
+## 0. Page views (`src/lib/view.ts`, `src/App.tsx`)
+- `getView({ status, isDemo, searchRequested, exampleRequested })` returns `landing`, `loading`, `live`, `example`, or `error`; errors and loading take precedence.
+- Landing shows the header logo + theme toggle only, plus `LandingHero`: pill, "Your card. Your identity.", handle validation, "No login · Free · PNG export", "See an example", and the `FlipCard` showcase.
+- `FlipCard` renders `PortraitCard` with the sample profile (Expert foil) on the front and a dark rank-colour patterned back; CSS 3D flip (~9s), sheen (~4s), glow pulse, float, desktop pointer tilt, manual click flip with a 6s auto-pause, and a reduced-motion front-only fallback.
+- Loading keeps the full hero and FlipCard, speeds the sheen to 2s, and shows the staged API progress under the search. Live collapses to a compact search bar, renders the full dashboard, and smooth-scrolls to `#studio`.
+- Example renders the full dashboard with the sample profile and an "Example profile. Enter your handle to make your own." banner; its button returns to landing and focuses `#handle`. Sharing stays disabled because `profile.isSample` is true.
+- Error keeps the existing error copy plus "Back to start". `/u/{handle}` starts in loading and auto-searches; the logo resets to landing and `/`.
+- `useCodeforcesProfile` starts idle with no profile and exposes `reset()`; the sample profile is only loaded through `showDemo()`.
 
 ## 1. Card templates (`src/lib/cardTemplates.ts`, rendered via `ProfileCard.tsx`)
 | id | size (CSS px) | aspect | pixelRatio | available | rendered by |
@@ -78,4 +87,6 @@ Ambient rank glow → banner (optional `showBanner`, `customBanner`, `bannerPosi
 - `services/codeforces/transformers.test.ts` (13): peak day distinct counting/dedup/day assignment, grit counting/labels, difficulty buckets, helper edge cases.
 - `lib/cardStats.test.ts` (12): selection/captions/partial "~" suffix, substitution of unavailable stats, all-unavailable placeholder, unique ids mandate, `swapStat` replace/swap/no-op, `sanitizeStats` repair + default fill.
 - `lib/cardOptionsStorage.test.ts` (6): migration of missing fields, stats repair, nonsense payloads, round-trip persistence, invalid stored JSON, oversized data URL exclusion, quota failure fallback, clear.
-- No tests yet for export code, filename builder, or pixel/cap logic (export logic unaffected service).
+- `lib/view.test.ts` (4): landing/idle, loading, live success, example, and error precedence.
+- `lib/routing.test.ts` (5), `lib/ranks.test.ts` (3), `lib/caption.test.ts` (6), `lib/shareActions.test.ts` (2), `services/codeforces/sniper.test.ts` (7). Total: 58 tests.
+- No tests yet for the rasterisation/export service itself; share helpers and view state are covered.

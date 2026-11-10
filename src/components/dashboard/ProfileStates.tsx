@@ -27,19 +27,28 @@ const STAGES: Array<{
 interface ProfileLoadingStateProps {
   handle: string | null
   stage: ProfileFetchStage | null
+  /** Tighter layout when the stages sit under the landing search box. */
+  compact?: boolean
 }
 
 export function ProfileLoadingState({
   handle,
   stage,
+  compact = false,
 }: ProfileLoadingStateProps) {
   const activeIndex = stage
     ? STAGES.findIndex((item) => item.id === stage)
     : 0
 
   return (
-    <section className="section-shell py-16 sm:py-20">
-      <div className="widget mx-auto max-w-3xl p-7 sm:p-10">
+    <section className={compact ? 'py-5' : 'section-shell py-16 sm:py-20'}>
+      <div
+        className={
+          compact
+            ? 'mx-auto mt-6 max-w-xl rounded-2xl border border-line bg-widget/60 p-5 text-left'
+            : 'widget mx-auto max-w-3xl p-7 sm:p-10'
+        }
+      >
         <div className="flex items-start gap-4">
           <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-line bg-surface text-silver">
             <Loader2 size={18} className="animate-spin" />
@@ -115,6 +124,7 @@ interface ProfileErrorStateProps {
   error: CodeforcesApiError
   onRetry: () => void
   onDemo: () => void
+  onBackToStart: () => void
 }
 
 function errorCopy(error: CodeforcesApiError): {
@@ -170,6 +180,7 @@ export function ProfileErrorState({
   error,
   onRetry,
   onDemo,
+  onBackToStart,
 }: ProfileErrorStateProps) {
   const copy = errorCopy(error)
   const Icon = copy.icon
@@ -210,7 +221,14 @@ export function ProfileErrorState({
             className="inline-flex items-center justify-center gap-2 rounded-xl border border-line bg-surface px-4 py-2.5 text-[13px] font-medium text-silver transition-colors hover:border-silver/25 hover:text-ink"
           >
             <Sparkles size={14} className="text-gold" />
-            View demo profile
+            See an example
+          </button>
+          <button
+            type="button"
+            onClick={onBackToStart}
+            className="inline-flex items-center justify-center gap-2 rounded-xl border border-line bg-surface px-4 py-2.5 text-[13px] font-medium text-silver transition-colors hover:border-silver/25 hover:text-ink"
+          >
+            Back to start
           </button>
         </div>
 

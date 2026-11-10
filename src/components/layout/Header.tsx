@@ -22,9 +22,18 @@ interface HeaderProps {
    * profile object changes.
    */
   profile: Profile | null
+  /** Landing hides the section nav until a profile is on screen. */
+  showNav: boolean
+  onHome: () => void
 }
 
-export function Header({ theme, onToggleTheme, profile }: HeaderProps) {
+export function Header({
+  theme,
+  onToggleTheme,
+  profile,
+  showNav,
+  onHome,
+}: HeaderProps) {
   const [activeSection, setActiveSection] = useState('studio')
 
   useEffect(() => {
@@ -51,7 +60,11 @@ export function Header({ theme, onToggleTheme, profile }: HeaderProps) {
     <header className="sticky top-0 z-50 border-b border-line/70 bg-canvas/75 backdrop-blur-xl">
       <div className="section-shell flex h-16 items-center justify-between gap-4">
         <a
-          href="#top"
+          href="/"
+          onClick={(event) => {
+            event.preventDefault()
+            onHome()
+          }}
           className="group flex items-center gap-2.5"
           aria-label="Codecard home"
         >
@@ -64,7 +77,10 @@ export function Header({ theme, onToggleTheme, profile }: HeaderProps) {
         </a>
 
         <nav
-          className="hidden items-center gap-1 rounded-full border border-line bg-widget/60 p-1 md:flex"
+          className={cn(
+            'hidden items-center gap-1 rounded-full border border-line bg-widget/60 p-1 md:flex',
+            !showNav && 'md:hidden',
+          )}
           aria-label="Primary"
         >
           {NAV_ITEMS.map((item) => (
@@ -100,12 +116,14 @@ export function Header({ theme, onToggleTheme, profile }: HeaderProps) {
               {theme === 'dark' ? 'Light' : 'Dark'}
             </span>
           </button>
-          <a
-            href="#studio"
-            className="rounded-full border border-line bg-surface px-3.5 py-1.5 text-[12px] font-medium text-silver transition-colors hover:border-silver/25 hover:text-ink md:hidden"
-          >
-            Card
-          </a>
+          {showNav ? (
+            <a
+              href="#studio"
+              className="rounded-full border border-line bg-surface px-3.5 py-1.5 text-[12px] font-medium text-silver transition-colors hover:border-silver/25 hover:text-ink md:hidden"
+            >
+              Card
+            </a>
+          ) : null}
         </div>
       </div>
     </header>

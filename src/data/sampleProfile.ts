@@ -1,5 +1,3 @@
-import avatarUrl from '../assets/avatar.svg'
-
 import { buildCardNumber, buildContestStats } from '../services/codeforces/transformers'
 import type {
   HardestProblem,
@@ -224,10 +222,10 @@ const samplePeakDay = sampleActivity.days.reduce(
  * It is intentionally surfaced as "sample data" throughout the interface.
  */
 export const sampleProfile: Profile = {
-  handle: 'chaudharibhavesh198',
-  avatarUrl,
+  handle: 'codecard_demo',
+  avatarUrl: null,
   avatarDataUrl: null,
-  initials: 'CB',
+  initials: 'CD',
   rank: 'Expert',
   maxRank: 'Candidate Master',
   rating: 1847,
@@ -288,5 +286,5 @@ export const sampleProfile: Profile = {
   contests: ratingHistory.length,
   bestComeback: Math.max(...ratingHistory.map((point) => point.change)),
   topTag: { tag: 'dp', solved: 148, partial: false },
-  cardNumber: buildCardNumber('chaudharibhavesh198'),
+  cardNumber: buildCardNumber('codecard_demo'),
 }

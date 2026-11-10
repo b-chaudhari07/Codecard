@@ -42,6 +42,26 @@ npm run test    # Vitest unit tests
 npm run preview # preview the production build
 ```
 
+## Views
+
+The app has five top-level views, decided by the pure `getView()` helper in
+`src/lib/view.ts`:
+
+- **Landing** — shown before any search. The header shows only the logo and
+  theme toggle; the hero includes the handle search, a looping front/back card
+  showcase, and a "See an example" action.
+- **Loading** — the hero stays visible with the card showcase and the existing
+  staged API progress list under the search box.
+- **Live** — a real Codeforces profile. The hero collapses to a compact search
+  bar, the full dashboard renders, and the page scrolls to the Card Studio.
+- **Example** — the sample profile with an "Example profile" banner; sharing
+  stays disabled and the banner returns to the landing search.
+- **Error** — the existing error states plus "Back to start".
+
+Opening `/u/{handle}` starts in the loading view and auto-searches, so the
+landing hero never flashes. Clicking the Codecard logo resets the view to
+landing and the URL to `/`.
+
 ## Card templates
 
 All templates are available today and rendered from one scoring design; the
@@ -147,11 +167,13 @@ explicit; failed live data is never replaced with the sample fixture.
 
 ## Demo mode
 
-`src/data/sampleProfile.ts` (`@chaudharibhavesh198`, an Expert fixture with a
-Candidate-Master peak) is an explicitly labelled design preview. It is shown on
-first load and via "View demo profile" from error states; live searches replace
-it. Its activity window is generated relative to today, so the heatmap always
-looks fresh.
+`src/data/sampleProfile.ts` is an explicitly labelled design preview for the
+`codecard_demo` handle ("Codecard Demo", initials `CD`, no personal photo). It
+is shown through "See an example" on the landing hero or from error states; live
+searches replace it. Its activity window is generated relative to today, so the
+heatmap always looks fresh. The landing hero renders the same sample profile in
+the FlipCard showcase at a fixed preview scale, with an Expert rank so the foil
+is visible.
 
 ## Avatars
 

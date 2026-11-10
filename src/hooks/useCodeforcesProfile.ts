@@ -39,17 +39,16 @@ export interface UseCodeforcesProfileResult {
   search: (handle: string) => void
   retry: () => void
   showDemo: () => void
+  reset: () => void
 }
 
 export function useCodeforcesProfile(): UseCodeforcesProfileResult {
-  const [profile, setProfile] = useState<Profile | null>(sampleProfile)
-  const [status, setStatus] = useState<ProfileStatus>('success')
+  const [profile, setProfile] = useState<Profile | null>(null)
+  const [status, setStatus] = useState<ProfileStatus>('idle')
   const [stage, setStage] = useState<ProfileFetchStage | null>(null)
   const [error, setError] = useState<CodeforcesApiError | null>(null)
-  const [activeHandle, setActiveHandle] = useState<string | null>(
-    sampleProfile.handle,
-  )
-  const [isDemo, setIsDemo] = useState(true)
+  const [activeHandle, setActiveHandle] = useState<string | null>(null)
+  const [isDemo, setIsDemo] = useState(false)
 
   const requestIdRef = useRef(0)
   const abortRef = useRef<AbortController | null>(null)
@@ -250,6 +249,20 @@ export function useCodeforcesProfile(): UseCodeforcesProfileResult {
     setActiveHandle(sampleProfile.handle)
   }, [])
 
+  const reset = useCallback(() => {
+    requestIdRef.current += 1
+    abortRef.current?.abort()
+    abortRef.current = null
+    loadingHandleRef.current = null
+
+    setProfile(null)
+    setStatus('idle')
+    setStage(null)
+    setError(null)
+    setIsDemo(false)
+    setActiveHandle(null)
+  }, [])
+
   return {
     profile,
     status,
@@ -260,5 +273,6 @@ export function useCodeforcesProfile(): UseCodeforcesProfileResult {
     search,
     retry,
     showDemo,
+    reset,
   }
 }

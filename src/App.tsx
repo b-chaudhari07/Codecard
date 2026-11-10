@@ -2,13 +2,13 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { Analytics } from './components/dashboard/Analytics'
 import { HardestChallenges } from './components/dashboard/HardestChallenges'
-import { Hero } from './components/dashboard/Hero'
 import { ProfileOverview } from './components/dashboard/ProfileOverview'
 import {
   ProfileErrorState,
-  ProfileLoadingState,
   ProfileWarnings,
 } from './components/dashboard/ProfileStates'
+import { ExampleBanner } from './components/landing/ExampleBanner'
+import { LandingHero } from './components/landing/LandingHero'
 import { Footer } from './components/layout/Footer'
 import { AppErrorBoundary } from './components/ui/AppErrorBoundary'
 import { Header } from './components/layout/Header'
@@ -24,7 +24,12 @@ import type { AppTheme } from './lib/appTheme'
 import { loadCardOptions, persistCardOptions } from './lib/cardOptionsStorage'
 import { parseHandleFromPath } from './lib/routing'
 import { sanitizeStats, swapStat } from './lib/cardStats'
+import { getView } from './lib/view'
 import type { CardOptions, StatId } from './types/profile'
+
+function prefersReducedMotion(): boolean {
+  return window.matchMedia('(prefers-reduced-motion: reduce)').matches
+}
 
 function App() {
   const {
@@ -37,9 +42,16 @@ function App() {
     search,
     retry,
     showDemo,
+    reset,
   } = useCodeforcesProfile()
 
-  const [hasSearched, setHasSearched] = useState(false)
+  const [initialPathHandle] = useState(() =>
+    parseHandleFromPath(window.location.pathname),
+  )
+  const [searchRequested, setSearchRequested] = useState(
+    () => initialPathHandle !== null,
+  )
+  const [exampleRequested, setExampleRequested] = useState(false)
   const [searchAttempt, setSearchAttempt] = useState(0)
   const [theme, setTheme] = useState<AppTheme>(() => getInitialTheme())
   const [cardOptions, setCardOptions] = useState<CardOptions>(() =>
@@ -49,6 +61,13 @@ function App() {
   const scrollTarget = useRef<'results' | 'studio'>('results')
   const initialPathHandled = useRef(false)
   const updateUrlAfterSearch = useRef(false)
+
+  const view = getView({
+    status,
+    isDemo,
+    searchRequested,
+    exampleRequested,
+  })
 
   useEffect(() => {
     applyTheme(theme)
@@ -71,14 +90,58 @@ function App() {
     return () => media.removeEventListener('change', handleChange)
   }, [])
 
-  const handleSearch = useCallback((handle: string, fromPath = false) => {
-    scrollPending.current = true
-    scrollTarget.current = 'studio'
-    updateUrlAfterSearch.current = !fromPath
-    setHasSearched(true)
-    setSearchAttempt((attempt) => attempt + 1)
-    search(handle)
-  }, [search])
+  const handleSearch = useCallback(
+    (handle: string, fromPath = false) => {
+      scrollPending.current = true
+      scrollTarget.current = 'studio'
+      updateUrlAfterSearch.current = !fromPath
+      setSearchRequested(true)
+      setExampleRequested(false)
+      setSearchAttempt((attempt) => attempt + 1)
+      search(handle)
+    },
+    [search],
+  )
+
+  const resetToLanding = useCallback(() => {
+    scrollPending.current = false
+    updateUrlAfterSearch.current = false
+    reset()
+    setSearchRequested(false)
+    setExampleRequested(false)
+  }, [reset])
+
+  const scrollToTop = useCallback(() => {
+    window.scrollTo({
+      top: 0,
+      behavior: prefersReducedMotion() ? 'auto' : 'smooth',
+    })
+  }, [])
+
+  const handleBackToStart = useCallback(() => {
+    resetToLanding()
+    if (window.location.pathname !== '/') {
+      window.history.pushState(null, '', '/')
+    }
+    scrollToTop()
+  }, [resetToLanding, scrollToTop])
+
+  const handleExampleStart = useCallback(() => {
+    handleBackToStart()
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
+        document.getElementById('handle')?.focus({ preventScroll: true })
+      })
+    })
+  }, [handleBackToStart])
+
+  const handleSeeExample = useCallback(() => {
+    scrollPending.current = false
+    updateUrlAfterSearch.current = false
+    setSearchRequested(false)
+    setExampleRequested(true)
+    showDemo()
+  }, [showDemo])
 
   const handleSelectStat = useCallback((statId: StatId) => {
     setCardOptions((current) => {
@@ -92,17 +155,16 @@ function App() {
 
   useEffect(() => {
     if (initialPathHandled.current) return
-    const pathHandle = parseHandleFromPath(window.location.pathname)
-    if (!pathHandle) {
+    if (!initialPathHandle) {
       initialPathHandled.current = true
       return
     }
     const timer = window.setTimeout(() => {
       initialPathHandled.current = true
-      handleSearch(pathHandle, true)
+      handleSearch(initialPathHandle, true)
     }, 0)
     return () => window.clearTimeout(timer)
-  }, [handleSearch])
+  }, [handleSearch, initialPathHandle])
 
   useEffect(() => {
     const handlePopState = () => {
@@ -111,14 +173,12 @@ function App() {
       if (pathHandle) {
         handleSearch(pathHandle, true)
       } else {
-        scrollPending.current = false
-        setHasSearched(false)
-        showDemo()
+        resetToLanding()
       }
     }
     window.addEventListener('popstate', handlePopState)
     return () => window.removeEventListener('popstate', handlePopState)
-  }, [handleSearch, showDemo])
+  }, [handleSearch, resetToLanding])
 
   useEffect(() => {
     if (status !== 'success' || !profile || isDemo) return
@@ -134,12 +194,8 @@ function App() {
   }, [status, profile, isDemo])
 
   useEffect(() => {
-    if (!hasSearched || !scrollPending.current) return
-    if (
-      status !== 'loading' &&
-      status !== 'error' &&
-      status !== 'success'
-    ) {
+    if (!searchRequested || !scrollPending.current) return
+    if (status !== 'loading' && status !== 'error' && status !== 'success') {
       return
     }
 
@@ -147,8 +203,14 @@ function App() {
     scrollPending.current = false
     document
       .getElementById(scrollTarget.current)
-      ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-  }, [hasSearched, searchAttempt, status])
+      ?.scrollIntoView({
+        behavior: prefersReducedMotion() ? 'auto' : 'smooth',
+        block: 'start',
+      })
+  }, [searchRequested, searchAttempt, status])
+
+  const isFullView = view === 'live' || view === 'example'
+  const showCompactHero = isFullView || view === 'error'
 
   return (
     <div className="relative min-h-screen overflow-x-clip">
@@ -172,33 +234,37 @@ function App() {
           })
         }}
         profile={profile}
+        showNav={view !== 'landing'}
+        onHome={handleBackToStart}
       />
 
       <main>
-        <Hero
+        <LandingHero
           onSearch={handleSearch}
-          isLoading={status === 'loading'}
-          isDemo={isDemo}
-          hasError={status === 'error'}
+          onSeeExample={handleSeeExample}
+          isLoading={view === 'loading'}
+          stage={stage}
           activeHandle={activeHandle}
+          compact={showCompactHero}
         />
 
         <div id="results" className="scroll-mt-20">
-          {status === 'loading' ? (
-            <ProfileLoadingState handle={activeHandle} stage={stage} />
-          ) : null}
-
-          {status === 'error' && error ? (
+          {view === 'error' && error ? (
             <ProfileErrorState
               handle={activeHandle}
               error={error}
               onRetry={retry}
-              onDemo={showDemo}
+              onDemo={handleSeeExample}
+              onBackToStart={handleBackToStart}
             />
           ) : null}
 
-          {profile ? (
-            <>
+          {isFullView && profile ? (
+            <div className="animate-fade-in motion-reduce:animate-none">
+              {view === 'example' ? (
+                <ExampleBanner onStart={handleExampleStart} />
+              ) : null}
+
               <ProfileWarnings
                 warnings={profile.warnings}
                 onRetry={profile.isSample ? undefined : retry}
@@ -221,7 +287,7 @@ function App() {
                 profile={profile}
                 selectedStats={cardOptions.stats}
               />
-            </>
+            </div>
           ) : null}
         </div>
       </main>
