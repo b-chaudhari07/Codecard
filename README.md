@@ -141,12 +141,14 @@ clipboard image support depend on browser permissions and platform support.
 
 ## Privacy
 
-Codecard has no accounts, tracking or analytics, and stores no data on its
-servers. Profile data comes directly from the public Codeforces API in your
-browser. Avatars use the third-party wsrv.nl image proxy so they can be embedded
-in downloads. Card settings and small uploaded photos/banners stay in this
-browser's local storage; large uploads remain in memory only. Codecard is not
-affiliated with or endorsed by Codeforces.
+Codecard has no accounts and stores no data on its servers. It uses
+privacy-friendly visit counts (Vercel Web Analytics): no cookies, no profile
+data, and handles are removed from tracked pages. Profile data comes directly
+from the public Codeforces API in your browser. Avatars use the third-party
+wsrv.nl image proxy so they can be embedded in downloads. Card settings and
+small uploaded photos/banners stay in this browser's local storage; large
+uploads remain in memory only. Codecard is not affiliated with or endorsed by
+Codeforces.
 
 ## Live Codeforces data
 

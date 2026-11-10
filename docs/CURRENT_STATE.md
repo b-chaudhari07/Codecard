@@ -68,7 +68,7 @@ Ambient rank glow → banner (optional `showBanner`, `customBanner`, `bannerPosi
 - MISSING: export service extraction (`cards/export/`) and options, JPEG/WebP modes, 1x–4x scales, 4000px/16 MP warning and cap, Export section, "-front" filename scheme, card back, front/back toggle, print sheet.
 
 ## 8. Privacy, deployment, and app resilience
-- No accounts, tracking or analytics, and no profile data stored on Codecard servers. Profile data is fetched directly from Codeforces in-browser.
+- Privacy-friendly visit counts use Vercel Web Analytics in production only: no cookies, no profile data, and `/u/{handle}` paths are rewritten to `/u/:handle` (query/hash dropped) before sending. No accounts, and no profile data stored on Codecard servers. Profile data is fetched directly from Codeforces in-browser.
 - Avatars are fetched through wsrv.nl to embed in PNGs. Card settings and small uploaded images are stored in browser localStorage; uploads over 1 MB stay memory-only. Codecard is not affiliated with Codeforces.
 - Error boundaries wrap the app and card studio separately, with friendly reload fallbacks and console error logging.
 - `VITE_SITE_URL` sets the public origin for metadata and share links; unset metadata uses `https://your-domain` and runtime share links use the current origin. `VITE_GITHUB_URL` optionally sets the footer repository link; unset hides it. `.env.example` documents both.

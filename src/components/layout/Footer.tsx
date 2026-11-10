@@ -153,7 +153,7 @@ export function Footer() {
               </button>
             </header>
             <ul className="mt-4 list-disc space-y-2 pl-5 text-sm leading-relaxed text-muted">
-              <li>No accounts, tracking or analytics, and no data stored on our servers.</li>
+              <li>We use privacy-friendly visit counts (Vercel Web Analytics): no cookies, no profile data, and handles are removed from tracked pages. No accounts, and your card settings stay in your browser.</li>
               <li>Profile data is fetched directly from the public Codeforces API in your browser.</li>
               <li>Your avatar is fetched through the third-party wsrv.nl image proxy so it can be included in the downloaded image.</li>
               <li>Card settings and small uploaded photos or banners are saved in this browser&apos;s local storage only. Large uploads stay in memory and are not saved.</li>
