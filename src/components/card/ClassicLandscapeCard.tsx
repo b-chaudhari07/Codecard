@@ -19,7 +19,7 @@ import {
   withAlpha,
 } from '../../lib/cardThemes'
 import { resolveDesignation } from '../../lib/designation'
-import { formatNumber } from '../../lib/utils'
+import { formatMonthYear, formatNumber } from '../../lib/utils'
 import type {
   CardOptions,
   HeatmapDay,
@@ -77,6 +77,11 @@ export const ClassicLandscapeCard = forwardRef<
       .join(' · ')
 
     const activity = profile.submissionActivity
+    const activeDaysCaption = activity?.firstSubmissionDate
+      ? `since ${formatMonthYear(activity.firstSubmissionDate)}${
+          activity.isPartial ? ' ~' : ''
+        }`
+      : 'days submitted'
     const hardest = profile.hardestProblem
 
     // Chunk the last 52 * 7 = 364 days into week columns. The header summary
@@ -1001,7 +1006,7 @@ export const ClassicLandscapeCard = forwardRef<
                               color: theme.muted,
                             }}
                           >
-                            days with submissions
+                            {activeDaysCaption}
                           </p>
                         </AchievementTile>
                       ) : null}

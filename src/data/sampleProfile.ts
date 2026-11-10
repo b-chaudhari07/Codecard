@@ -220,7 +220,7 @@ const samplePeakDay = sampleActivity.days.reduce(
 
 /**
  * DESIGN PREVIEW FIXTURE — NOT LIVE DATA.
- * Every statistic below is hard-coded sample data for demo mode only.
+ * Every statistic below is hard-coded sample data for example mode only.
  * It is intentionally surfaced as "sample data" throughout the interface.
  */
 export const sampleProfile: Profile = {

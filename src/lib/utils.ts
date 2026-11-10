@@ -50,6 +50,14 @@ export function formatLongDate(iso: string): string {
   })
 }
 
+/** Compact local month and year, e.g. "May 2020". */
+export function formatMonthYear(iso: string): string {
+  return new Date(`${iso}T00:00:00`).toLocaleDateString('en-US', {
+    month: 'short',
+    year: 'numeric',
+  })
+}
+
 const RANGE_MONTHS: Record<RatingRange, number | null> = {
   '1M': 1,
   '6M': 6,

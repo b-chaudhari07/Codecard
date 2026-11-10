@@ -108,9 +108,9 @@ export function Header({
             aria-label={`Switch to ${nextThemeLabel} theme`}
           >
             {theme === 'dark' ? (
-              <Sun size={12} strokeWidth={1.8} />
-            ) : (
               <Moon size={12} strokeWidth={1.8} />
+            ) : (
+              <Sun size={12} strokeWidth={1.8} />
             )}
             <span className="hidden sm:inline">
               {theme === 'dark' ? 'Light' : 'Dark'}

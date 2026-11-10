@@ -117,8 +117,8 @@ export function Footer() {
           <p>© 2026 Codecard. All rights reserved.</p>
           <p>
             Profile data via the Codeforces public API. Live results are fetched
-            directly from Codeforces; the sample fixture is used only in demo
-            mode.
+            directly from Codeforces; the sample fixture is used only in
+            example mode.
           </p>
         </div>
       </div>

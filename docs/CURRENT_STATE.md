@@ -1,10 +1,10 @@
 # Codecard — Current State (branch `card-2.0`)
 
-Status verified from code only; current test suite has 58 tests. Build, lint, and tests are run for the current change.
+Status verified from code only; current test suite has 72 tests. Build, lint, and tests are run for the current change.
 
 ## 0. Page views (`src/lib/view.ts`, `src/App.tsx`)
 - `getView({ status, isDemo, searchRequested, exampleRequested })` returns `landing`, `loading`, `live`, `example`, or `error`; errors and loading take precedence.
-- Landing shows the header logo + theme toggle only, plus `LandingHero`: pill, "Your card. Your identity.", handle validation, "No login · Free · PNG export", "See an example", and the `FlipCard` showcase.
+- Landing shows the header logo + theme toggle only, plus `LandingHero`: pill, "Your card. Your identity." (identity in an emerald→cyan gradient with a solid fallback), handle validation, "No login · Free · PNG export", "See an example →", and the `FlipCard` showcase.
 - `FlipCard` renders `PortraitCard` with the sample profile (Expert foil) on the front and a dark rank-colour patterned back; CSS 3D flip (~9s), sheen (~4s), glow pulse, float, desktop pointer tilt, manual click flip with a 6s auto-pause, and a reduced-motion front-only fallback.
 - Loading keeps the full hero and FlipCard, speeds the sheen to 2s, and shows the staged API progress under the search. Live collapses to a compact search bar, renders the full dashboard, and smooth-scrolls to `#studio`.
 - Example renders the full dashboard with the sample profile and an "Example profile. Enter your handle to make your own." banner; its button returns to landing and focuses `#handle`. Sharing stays disabled because `profile.isSample` is true.
@@ -30,9 +30,9 @@ Ambient rank glow → banner (optional `showBanner`, `customBanner`, `bannerPosi
 - Banner: "Cinematic banner" toggle, upload button (image MIME, 6 MB, inline error 3), Remove, Crop position (top/center/bottom).
 - Profile photo: "Upload photo" (same checks) + Reset (only when custom set), avatar preview, inline error, mode caption.
 - Personal quote: toggle + 90-char input.
-- Tagline Designation: Auto/Custom buttons; Auto shows generated tagline; Custom input (48 chars); "Show tagline" toggle (`showDesignation`, description "Classic card only" when portrait active).
-- Card sections: toggles for rating graph, heatmap, hardest challenge, achievement stats, watermark.
-- Stat tiles: 6 select slots over the stat pool with `swapStat` duplicate handling.
+- Tagline Designation (classic template only): Auto/Custom buttons; Auto shows generated tagline; Custom input (48 chars); "Show tagline" toggle (`showDesignation`, description "Tagline under the handle").
+- Card sections: toggles for rating graph, heatmap, hardest challenge ("Boss tile (hardest solved)" outside classic), achievement stats ("Show the stat tiles" outside classic), watermark.
+- Stat tiles: 6 select slots over the stat pool with `swapStat` duplicate handling. Fixed captions stay at 18 characters or fewer; active days shows "since Mon YYYY" (plus the existing partial "~").
 - Download button + export-size caption (`template.width × pixelRatio`), plus Share, Copy image/caption, Post on X, and Post on LinkedIn actions.
 
 ## 4. Export and sharing
@@ -83,9 +83,9 @@ Ambient rank glow → banner (optional `showBanner`, `customBanner`, `bannerPosi
 - The default banner is an SVG asset imported via Vite (`anime-banner.svg`), so exports rasterize an SVG; custom banners are data URLs and bypass it. Exports wait for `document.fonts.ready` before capture.
 
 ## 10. Tests
-- `services/codeforces/transformers.test.ts` (13): peak day distinct counting/dedup/day assignment, grit counting/labels, difficulty buckets, helper edge cases.
-- `lib/cardStats.test.ts` (12): selection/captions/partial "~" suffix, substitution of unavailable stats, all-unavailable placeholder, unique ids mandate, `swapStat` replace/swap/no-op, `sanitizeStats` repair + default fill.
-- `lib/cardOptionsStorage.test.ts` (6): migration of missing fields, stats repair, nonsense payloads, round-trip persistence, invalid stored JSON, oversized data URL exclusion, quota failure fallback, clear.
+- `services/codeforces/transformers.test.ts` (18): peak day distinct counting/dedup/day assignment, grit counting/labels, difficulty buckets, helper edge cases, and multi-year submission activity (all-history active days/streak/first date vs the 12-month window, truncation).
+- `lib/cardStats.test.ts` (13): selection/captions/partial "~" suffix, active-days "since Mon YYYY" caption, fixed captions at 18 characters or fewer, substitution of unavailable stats, all-unavailable placeholder, unique ids mandate, `swapStat` replace/swap/no-op, `sanitizeStats` repair + default fill.
+- `lib/cardOptionsStorage.test.ts` (10): migration of missing fields, stats repair, nonsense payloads, legacy accent stripping, round-trip persistence, invalid/old stored versions, oversized data URL exclusion, quota failure fallback, clear.
 - `lib/view.test.ts` (4): landing/idle, loading, live success, example, and error precedence.
-- `lib/routing.test.ts` (5), `lib/ranks.test.ts` (3), `lib/caption.test.ts` (6), `lib/shareActions.test.ts` (2), `services/codeforces/sniper.test.ts` (7). Total: 58 tests.
+- `lib/analytics.test.ts` (4), `lib/routing.test.ts` (5), `lib/ranks.test.ts` (3), `lib/caption.test.ts` (6), `lib/shareActions.test.ts` (2), `services/codeforces/sniper.test.ts` (7). Total: 72 tests.
 - No tests yet for the rasterisation/export service itself; share helpers and view state are covered.

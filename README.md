@@ -165,7 +165,7 @@ difficulty distribution instead of being treated as rating zero. Loading,
 not-found, rate-limit, network, invalid-response and empty-history states are
 explicit; failed live data is never replaced with the sample fixture.
 
-## Demo mode
+## Example profile
 
 `src/data/sampleProfile.ts` is an explicitly labelled design preview for the
 `codecard_demo` handle ("Codecard Demo", initials `CD`, no personal photo). It

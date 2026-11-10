@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest'
 
-import { selectStats, sanitizeStats, swapStat } from './cardStats'
+import {
+  getAvailableStats,
+  selectStats,
+  sanitizeStats,
+  swapStat,
+} from './cardStats'
 import type { Profile, StatId } from '../types/profile'
 
 function makeProfile(overrides: Partial<Profile> = {}): Profile {
@@ -97,7 +102,7 @@ describe('selectStats', () => {
       (item) => item.id === 'activeDays',
     )
     expect(tile?.value).toBe('320')
-    expect(tile?.caption).toBe('days with submissions since May 2020')
+    expect(tile?.caption).toBe('since May 2020')
   })
 
   it('marks a truncated active-days caption as partial', () => {
@@ -122,9 +127,54 @@ describe('selectStats', () => {
     const tile = selectStats(profile, ['activeDays']).find(
       (item) => item.id === 'activeDays',
     )
-    expect(tile?.caption).toBe(
-      'days with submissions since Jan 2018 (partial) ~',
-    )
+    expect(tile?.caption).toBe('since Jan 2018 ~')
+  })
+
+  it('keeps every fixed stat caption within 18 characters', () => {
+    const profile = makeProfile({
+      hardestProblem: {
+        key: '1:A',
+        contestId: 1,
+        index: 'A',
+        name: 'A Very Long Boss Problem Name',
+        rating: 3500,
+        url: null,
+      },
+      submissionActivity: {
+        days: [],
+        activeDays: 320,
+        firstSubmissionDate: '2020-05-04',
+        longestStreak: 10,
+        totalSubmissions: 4000,
+        acceptedSubmissions: 3000,
+        windowSubmissions: 400,
+        windowAcceptedSubmissions: 300,
+        windowActiveDays: 22,
+        maxDailySubmissions: 12,
+        windowStart: '2025-11-09',
+        windowEnd: '2026-11-15',
+        isPartial: true,
+      },
+      peakDay: { count: 12, date: '2026-08-15', partial: true },
+      grit: {
+        count: 9,
+        problemName: 'Hard Problem',
+        problemIndex: 'B',
+        partial: true,
+      },
+      sniper: { percent: 42, firstTry: 21, solved: 50, partial: true },
+    })
+
+    const tiles = getAvailableStats(profile)
+    expect(tiles.map((tile) => tile.id)).toContain('activeDays')
+    for (const tile of tiles) {
+      // Boss uses a variable problem name and is the only caption allowed to truncate.
+      if (tile.id === 'boss') continue
+      expect(
+        tile.caption.length,
+        `${tile.id}: ${tile.caption}`,
+      ).toBeLessThanOrEqual(18)
+    }
   })
 
   it('appends a trailing ~ to partial captions', () => {

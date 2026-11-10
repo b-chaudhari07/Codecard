@@ -1,4 +1,4 @@
-import { formatNumber } from './utils'
+import { formatMonthYear, formatNumber } from './utils'
 import type { Profile, StatId } from '../types/profile'
 
 /**
@@ -73,12 +73,6 @@ const MONTHS = [
 function compactDate(iso: string): string {
   const date = new Date(`${iso}T00:00:00`)
   return `${MONTHS[date.getMonth()]} ${date.getDate()}`
-}
-
-/** Compact local month and year, e.g. "Aug 2023". */
-function compactMonthYear(iso: string): string {
-  const date = new Date(`${iso}T00:00:00`)
-  return `${MONTHS[date.getMonth()]} ${date.getFullYear()}`
 }
 
 const STAT_DEFINITIONS: StatDefinition[] = [
@@ -177,13 +171,11 @@ const STAT_DEFINITIONS: StatDefinition[] = [
       const activity = profile.submissionActivity
       if (activity.activeDays <= 0) return null
       const since = activity.firstSubmissionDate
-        ? ` since ${compactMonthYear(activity.firstSubmissionDate)}`
-        : ''
+        ? `since ${formatMonthYear(activity.firstSubmissionDate)}`
+        : 'days submitted'
       return {
         value: formatNumber(activity.activeDays),
-        caption: `days with submissions${since}${
-          activity.isPartial ? ' (partial)' : ''
-        }`,
+        caption: since,
         partial: activity.isPartial,
       }
     },
@@ -211,7 +203,7 @@ const STAT_DEFINITIONS: StatDefinition[] = [
       if (!sniper) return null
       return {
         value: `${sniper.percent}%`,
-        caption: 'first-try in contests',
+        caption: 'first-try rounds',
         partial: sniper.partial,
       }
     },

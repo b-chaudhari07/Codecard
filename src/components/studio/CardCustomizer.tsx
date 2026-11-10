@@ -565,8 +565,9 @@ export function CardCustomizer({
         </p>
       </div>
 
-      {/* Designation / Tagline */}
-      <div className="mt-4 border-t border-line pt-3.5">
+      {/* Designation / Tagline (classic card only) */}
+      {isClassic ? (
+        <div className="mt-4 border-t border-line pt-3.5">
         <div className="flex items-center justify-between">
           <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-muted">
             Tagline Designation
@@ -627,16 +628,13 @@ export function CardCustomizer({
         <div className="mt-1 border-t border-line/60 pt-1">
           <Toggle
             label="Show tagline"
-            description={
-              options.template === 'classic'
-                ? 'Tagline under the handle'
-                : 'Classic card only'
-            }
+            description="Tagline under the handle"
             checked={options.showDesignation}
             onChange={(checked) => update({ showDesignation: checked })}
           />
         </div>
       </div>
+      ) : null}
 
       {/* Card sections toggles */}
       <div className="mt-4 border-t border-line pt-3.5">
@@ -673,9 +671,7 @@ export function CardCustomizer({
           <Toggle
             label="Achievement stats"
             description={
-              isClassic
-                ? 'Solves, active days, streak'
-                : 'Solved, streak, peak day, grit, contests'
+              isClassic ? 'Solves, active days, streak' : 'Show the stat tiles'
             }
             checked={options.showStats}
             onChange={(checked) => update({ showStats: checked })}

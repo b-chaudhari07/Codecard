@@ -77,13 +77,11 @@ export function LandingHero({
             )}
           >
             Your card.{' '}
-            <span className={compact ? 'text-silver' : 'text-muted'}>
-              Your identity.
-            </span>
+            <span className="landing-gradient-text">Your identity.</span>
           </h1>
 
           {!compact ? (
-            <p className="animate-fade-up mx-auto mt-6 max-w-xl text-base leading-relaxed text-muted [animation-delay:140ms] sm:text-lg">
+            <p className="animate-fade-up mx-auto mt-6 max-w-xl text-base leading-relaxed text-silver [animation-delay:140ms] sm:text-lg">
               Turn your Codeforces profile into a collectible card worth
               sharing.
             </p>
@@ -124,7 +122,7 @@ export function LandingHero({
                 autoComplete="off"
                 spellCheck={false}
                 disabled={isLoading}
-                className="h-11 min-w-0 flex-1 bg-transparent text-[15px] text-ink placeholder:text-muted/55 focus:outline-none disabled:opacity-70"
+                className="h-11 min-w-0 flex-1 bg-transparent text-[15px] text-ink placeholder:text-silver/80 focus:outline-none disabled:opacity-70"
               />
               <button
                 type="submit"
@@ -160,7 +158,7 @@ export function LandingHero({
 
           {!compact ? (
             <>
-              <div className="animate-fade-up mt-1 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-[11px] text-muted/70 [animation-delay:260ms]">
+              <div className="animate-fade-up mt-1 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-[11px] text-silver/80 [animation-delay:260ms]">
                 <span>No login</span>
                 <span className="h-1 w-1 rounded-full bg-line" />
                 <span>Free</span>
@@ -171,9 +169,9 @@ export function LandingHero({
               <button
                 type="button"
                 onClick={onSeeExample}
-                className="animate-fade-up mt-5 text-[12px] font-medium text-silver underline-offset-4 transition-colors hover:text-ink hover:underline [animation-delay:300ms]"
+                className="animate-fade-up mt-5 rounded-sm text-[12px] font-medium text-positive underline-offset-4 transition-colors hover:underline focus-visible:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-positive/50 focus-visible:ring-offset-2 focus-visible:ring-offset-canvas [animation-delay:300ms]"
               >
-                See an example
+                See an example →
               </button>
 
               {isLoading ? (

@@ -339,7 +339,7 @@ export function CardStudio({
             <span className="text-silver">Your identity.</span>
           </>
         }
-        description="Choose a mood, tune the accent, and export a card worth sharing. The PNG contains the card only — no dashboard chrome."
+        description="Choose a template, make it yours, and export a card worth sharing. The PNG contains the card only — no dashboard chrome."
         action={
           <div className="inline-flex items-center gap-2 rounded-full border border-line bg-widget px-3 py-1.5 text-[11px] text-muted">
             <span
